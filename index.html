@@ -3,30 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Buu vence obstáculos por Jenny! 💪</title>
+    <title>Majin Buu conquista a Jenny ❤️</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    
-    <!-- UI FIJA -->
-    <div class="ui">
-        <div class="score">⚡ <span id="score">0</span></div>
-        <div class="hearts">❤️ <span id="lives">3</span></div>
+    <div class="game-container">
+        <!-- FONDO CORAZONES -->
+        <div class="hearts-bg"></div>
+        
+        <!-- PISTA DONDE CAMINA BUU -->
+        <div class="track"></div>
+        
+        <!-- MAJIN BUU REAL -->
+        <img src="img/buu.png" class="buu" id="buuImg" alt="Majin Buu">
+        
+        <!-- GLOBO DE DIALOGO -->
+        <div class="dialogo" id="dialogoBox">
+            <div class="pregunta" id="preguntaText"></div>
+            <div class="respuestas">
+                <button class="btn-si" onclick="responder('si')">SÍ 💖</button>
+                <button class="btn-no" onclick="responder('no')">NO 😢</button>
+            </div>
+        </div>
+        
+        <!-- JENNY AL FINAL -->
+        <div class="jenny-final">
+            <h2>JENNY ❤️</h2>
+            <div class="corazones-jenny">💖💖💖</div>
+        </div>
+        
+        <!-- PROGRESO -->
+        <div class="progreso">
+            <div class="corazon-progreso">Pregunta <span id="preguntaNum">1</span>/12</div>
+        </div>
+        
+        <!-- MENSAJE FINAL ÉPICO -->
+        <div class="final-epico" id="finalSi">
+            <h1>¡JENNY AMA A DIEGO! 🎉</h1>
+            <p>Buu está feliz 💖 Eres perfecta para Diego</p>
+            <p class="diego-firma">Te amo eternamente - Diego ❤️</p>
+            <button onclick="reiniciar()">🔄 Otra vez</button>
+        </div>
+        
+        <div class="final-triste" id="finalNo">
+            <h1>😢 Jenny no está lista</h1>
+            <p>Buu está triste... No hagas sufrir a Diego</p>
+            <button onclick="reiniciar()">Intentar de nuevo 💪</button>
+        </div>
     </div>
-    
-    <!-- GAME OVER ÉPICO -->
-    <div class="game-over" id="gameOver">
-        <div class="trophy">🏆</div>
-        <h1>¡LO LOGRASTE!</h1>
-        <p>Venciste <span id="finalScore">0</span> obstáculos</p>
-        <p class="romantico">¡Por Jenny nada me detiene! ❤️</p>
-        <button onclick="restartGame()">🔄 Jugar otra vez</button>
-    </div>
-
-    <!-- TOUCH ZONE -->
-    <div class="touch-zone" id="touchZone"></div>
 
     <script src="script.js"></script>
 </body>
 </html>
+
