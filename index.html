@@ -3,56 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Majin Buu conquista a Jenny ❤️</title>
+    <title>Buu cuenta nuestra historia Jenny ❤️</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <!-- FONDO CORAZONES -->
-        <div class="hearts-bg"></div>
-        
-        <!-- PISTA DONDE CAMINA BUU -->
-        <div class="track"></div>
-        
-        <!-- MAJIN BUU REAL -->
-        <img src="img/buu.png" class="buu" id="buuImg" alt="Majin Buu">
-        
-        <!-- GLOBO DE DIALOGO -->
-        <div class="dialogo" id="dialogoBox">
-            <div class="pregunta" id="preguntaText"></div>
-            <div class="respuestas">
-                <button class="btn-si" onclick="responder('si')">SÍ 💖</button>
-                <button class="btn-no" onclick="responder('no')">NO 😢</button>
-            </div>
+        <!-- ESCENARIO ACTUAL -->
+        <div class="escenario" id="escenario">
+            <div class="escenario-titulo" id="escenarioTitulo"></div>
         </div>
         
-        <!-- JENNY AL FINAL -->
-        <div class="jenny-final">
+        <!-- MAJIN BUU -->
+        <img src="img/buu.png" class="buu" id="buuImg" alt="Majin Buu">
+        
+        <!-- JENNY -->
+        <div class="jenny">
             <h2>JENNY ❤️</h2>
             <div class="corazones-jenny">💖💖💖</div>
         </div>
         
+        <!-- NARRACIÓN -->
+        <div class="narracion" id="narracionBox">
+            <div class="historia-texto" id="historiaText"></div>
+            <div class="respuesta">
+                <button class="btn-si" onclick="siguienteEscenario()">❤️ Continúa nuestra historia</button>
+            </div>
+        </div>
+        
         <!-- PROGRESO -->
         <div class="progreso">
-            <div class="corazon-progreso">Pregunta <span id="preguntaNum">1</span>/12</div>
+            Capítulo <span id="capituloNum">1</span>/12
         </div>
         
-        <!-- MENSAJE FINAL ÉPICO -->
-        <div class="final-epico" id="finalSi">
-            <h1>¡JENNY AMA A DIEGO! 🎉</h1>
-            <p>Buu está feliz 💖 Eres perfecta para Diego</p>
-            <p class="diego-firma">Te amo eternamente - Diego ❤️</p>
-            <button onclick="reiniciar()">🔄 Otra vez</button>
-        </div>
-        
-        <div class="final-triste" id="finalNo">
-            <h1>😢 Jenny no está lista</h1>
-            <p>Buu está triste... No hagas sufrir a Diego</p>
-            <button onclick="reiniciar()">Intentar de nuevo 💪</button>
+        <!-- FINAL ÉPICO -->
+        <div class="final-epico" id="finalEpico">
+            <div class="trophy">💍✨</div>
+            <h1>¡JENNY, SALGAMOS ADELANTE JUNTOS!</h1>
+            <p>Dios nos unió el 1 de Noviembre. Él nos guía siempre.</p>
+            <p class="diego-firma">"Dos podrán ayudarse mutuamente... ¡y tendrán éxito!" - Eclesiastés 4:9-10</p>
+            <button onclick="reiniciar()">🔄 Revivir nuestra historia</button>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
-
