@@ -2,49 +2,45 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buu cuenta nuestra historia Jenny ❤️</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <!-- ESCENARIO ACTUAL -->
+        <!-- ESCENARIO -->
         <div class="escenario" id="escenario">
-            <div class="escenario-titulo" id="escenarioTitulo"></div>
+            <div class="escenario-titulo" id="escenarioTitulo">Capítulo 1</div>
         </div>
         
-        <!-- MAJIN BUU -->
-        <img src="img/buu.png" class="buu" id="buuImg" alt="Majin Buu">
+        <!-- BUU -->
+        <img src="img/buu.png" class="buu" id="buu">
         
         <!-- JENNY -->
         <div class="jenny">
             <h2>JENNY ❤️</h2>
-            <div class="corazones-jenny">💖💖💖</div>
+            <div class="corazones">💖💖💖</div>
         </div>
         
-        <!-- NARRACIÓN -->
-        <div class="narracion" id="narracionBox">
-            <div class="historia-texto" id="historiaText"></div>
-            <div class="respuesta">
-                <button class="btn-si" onclick="siguienteEscenario()">❤️ Continúa nuestra historia</button>
+        <!-- HISTORIA -->
+        <div class="narracion">
+            <div class="texto" id="textoHistoria">
+                Toca para continuar nuestra historia...
             </div>
+            <button id="btnSiguiente" onclick="siguienteHistoria()">❤️ Continúa</button>
         </div>
         
         <!-- PROGRESO -->
-        <div class="progreso">
-            Capítulo <span id="capituloNum">1</span>/12
-        </div>
+        <div class="progreso" id="progreso">Capítulo 1/12</div>
         
-        <!-- FINAL ÉPICO -->
-        <div class="final-epico" id="finalEpico">
-            <div class="trophy">💍✨</div>
-            <h1>¡JENNY, SALGAMOS ADELANTE JUNTOS!</h1>
-            <p>Dios nos unió el 1 de Noviembre. Él nos guía siempre.</p>
-            <p class="diego-firma">"Dos podrán ayudarse mutuamente... ¡y tendrán éxito!" - Eclesiastés 4:9-10</p>
-            <button onclick="reiniciar()">🔄 Revivir nuestra historia</button>
+        <!-- FINAL -->
+        <div class="final" id="final">
+            <h1>💍 ¡Salgamos adelante JUNTOS!</h1>
+            <p>"Dos podrán ayudarse mutuamente" - Eclesiastés 4:9</p>
+            <p style="font-size: 24px; color: #e91e63;">Te amo Jenny - Diego ❤️</p>
+            <button onclick="reiniciar()">🔄 Reiniciar</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
