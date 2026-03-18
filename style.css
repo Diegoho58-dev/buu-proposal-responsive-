@@ -1,121 +1,196 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    background: linear-gradient(135deg, #87CEEB 0%, #98D8C8 70%, #90EE90 100%);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #ff9ecf 0%, #ffd6ec 50%, #e1bee7 100%);
+    font-family: -apple-system, Arial, sans-serif;
     overflow: hidden;
     height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
     touch-action: manipulation;
 }
 
-/* CANVAS RESPONSIVE */
-#gameCanvas {
+.game-container {
+    position: relative;
     width: 100vw;
     height: 100vh;
-    max-width: 100%;
-    max-height: 100vh;
-    display: block;
-    background: linear-gradient(to bottom, #87CEEB 75%, #90EE90 75%);
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
 }
 
-/* UI SUPERIOR */
-.ui {
+/* FONDO CORAZONES */
+.hearts-bg {
     position: fixed;
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 100;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     pointer-events: none;
+    z-index: 1;
+}
+.hearts-bg::before, .hearts-bg::after {
+    content: "💖";
+    position: absolute;
+    font-size: 30px;
+    animation: flotar 6s infinite linear;
+}
+.hearts-bg::before { top: 20%; left: 10%; animation-delay: 0s; }
+.hearts-bg::after { top: 60%; right: 15%; animation-delay: 2s; }
+
+@keyframes flotar {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
 }
 
-.score, .hearts {
+/* PISTA */
+.track {
+    position: absolute;
+    bottom: 25%;
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(90deg, #ffecb3, #fff9c4, #ffecb3);
+    border-top: 4px dashed #ff9800;
+    z-index: 2;
+}
+
+/* MAJIN BUU */
+.buu {
+    position: absolute;
+    bottom: 30%;
+    left: 15%;
+    width: clamp(100px, 20vw, 150px);
+    height: auto;
+    z-index: 10;
+    transition: left 2s ease-in-out;
+}
+
+.buu.hablando { animation: hablar 1s ease-in-out infinite; }
+.buu.cerca-jenny { left: 65% !important; transform: scale(1.1); }
+
+@keyframes hablar {
+    0%, 100% { transform: scaleX(1); }
+    50% { transform: scaleX(1.05); }
+}
+
+/* GLOBO DIALOGO */
+.dialogo {
+    position: absolute;
+    bottom: 55%;
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(255,255,255,0.95);
-    padding: 12px 20px;
+    padding: 25px;
     border-radius: 25px;
-    font-size: clamp(16px, 4vw, 20px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    max-width: 85vw;
+    display: none;
+    z-index: 15;
+    backdrop-filter: blur(15px);
+    border: 3px solid #ff4081;
+}
+
+.pregunta {
+    font-size: clamp(18px, 5vw, 24px);
+    margin-bottom: 20px;
+    line-height: 1.4;
+    color: #d81b60;
+    font-weight: bold;
+}
+
+.respuestas {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-si, .btn-no {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 20px;
+    font-size: clamp(16px, 4vw, 18px);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+.btn-si {
+    background: linear-gradient(135deg, #ff4081, #ff69b4);
+    color: white;
+    box-shadow: 0 5px 20px rgba(255,64,129,0.4);
+}
+
+.btn-no {
+    background: linear-gradient(135deg, #757575, #b0b0b0);
+    color: white;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.btn-si:active, .btn-no:active { transform: scale(0.95); }
+
+/* JENNY */
+.jenny-final {
+    position: absolute;
+    right: 10%;
+    bottom: 30%;
+    z-index: 5;
+    animation: corazonesJenny 3s ease-in-out infinite;
+}
+
+.jenny-final h2 {
+    font-size: clamp(24px, 6vw, 32px);
+    color: #e91e63;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+}
+
+.corazones-jenny {
+    font-size: 28px;
+    animation: latir 1.5s infinite;
+}
+
+@keyframes latir {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* PROGRESO */
+.progreso {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.9);
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: clamp(16px, 4vw, 18px);
     font-weight: bold;
     box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    backdrop-filter: blur(10px);
+    z-index: 20;
 }
 
-/* GAME OVER MODAL */
-.game-over {
+/* FINALES */
+.final-epico, .final-triste {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(255,214,236,0.95));
-    padding: clamp(30px, 8vw, 50px);
-    border-radius: 25px;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-    display: none;
-    z-index: 200;
-    max-width: 90vw;
-    border: 4px solid #ff4081;
-    backdrop-filter: blur(20px);
-}
-
-.trophy { font-size: clamp(40px, 12vw, 60px); margin-bottom: 15px; }
-.game-over h1 { 
-    color: #e91e63; 
-    font-size: clamp(24px, 7vw, 36px); 
-    margin: 0 0 15px;
-    animation: bounce 1s infinite;
-}
-.romantico { 
-    color: #ff4081; 
-    font-size: clamp(16px, 4vw, 20px);
-    margin: 20px 0;
-    font-weight: bold;
-}
-
-button {
-    background: linear-gradient(135deg, #ff4081, #ff69b4);
-    border: none;
-    color: white;
-    padding: clamp(15px, 5vw, 20px) 40px;
-    font-size: clamp(18px, 4.5vw, 22px);
+    background: linear-gradient(135deg, #fff, #ffebee);
+    padding: 40px;
     border-radius: 30px;
-    cursor: pointer;
-    box-shadow: 0 8px 25px rgba(255,64,129,0.4);
-    transition: all 0.2s;
-    font-weight: bold;
-    touch-action: manipulation;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    display: none;
+    max-width: 90vw;
+    z-index: 25;
+    border: 5px solid #ff4081;
 }
 
-button:active {
-    transform: scale(0.95);
-    box-shadow: 0 4px 15px rgba(255,64,129,0.3);
-}
+.final-epico h1 { color: #4caf50; font-size: clamp(28px, 7vw, 40px); }
+.final-triste h1 { color: #f44336; font-size: clamp(28px, 7vw, 40px); }
+.diego-firma { font-size: 20px; color: #e91e63; margin: 20px 0; font-style: italic; }
 
-/* TOUCH ZONE (invisible) */
-.touch-zone {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 50;
-}
-
-/* ANIMACIONES */
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-}
-
-/* MOVIL EXTRA */
 @media (max-width: 480px) {
-    .ui { top: 10px; padding: 0 10px; }
-    .score, .hearts { padding: 10px 15px; font-size: 16px; }
+    .dialogo { bottom: 50%; padding: 20px; }
+    .buu { bottom: 25%; }
 }
+
