@@ -1,185 +1,153 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
-const livesEl = document.getElementById('lives');
-const gameOverEl = document.getElementById('gameOver');
-const finalScoreEl = document.querySelector('#finalScore');
-const touchZone = document.getElementById('touchZone');
+const preguntas = [
+    "¿Jenny realmente quiere a Diego?",
+    "¿Te hace feliz estar con Diego?",
+    "¿Piensas en Diego cuando no está?",
+    "¿Diego te hace sentir especial?",
+    "¿Confías plenamente en Diego?",
+    "¿Te imaginas un futuro con Diego?",
+    "¿Diego es tu prioridad #1?",
+    "¿Te sientes segura con Diego?",
+    "¿Diego te entiende perfectamente?",
+    "¿Quieres hacer feliz a Diego siempre?",
+    "¿Diego es tu persona ideal?",
+    "¿Amarás a Diego por siempre?",
+    "¿Diego te hace reír incluso en días malos?",
+    "¿Te emociona ver mensajes de Diego?",
+    "¿Sientes mariposas cuando Diego te abraza?",
+    "¿Diego es tu mejor amigo también?",
+    "¿Quieres viajar el mundo con Diego?",
+    "¿Diego te inspira a ser mejor?",
+    "¿Te gusta cocinar para Diego?",
+    "¿Diego te hace sentir la mujer más bella?",
+    "¿Quieres tener hijos con Diego algún día?",
+    "¿Diego es tu refugio en la tormenta?",
+    "¿Te encanta el olor de Diego?",
+    "¿Diego te hace sentir protegida siempre?",
+    "¿Prometes amar a Diego toda la vida? 💍"
+];
 
-// RESPONSIVE CANVAS
-function resizeCanvas() {
-    const size = Math.min(window.innerWidth, window.innerHeight * 0.8);
-    canvas.width = size;
-    canvas.height = size * 0.5;
-    canvas.style.width = size + 'px';
-    canvas.style.height = (size * 0.5) + 'px';
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+let preguntaActual = 0;
+const buuImg = document.getElementById('buuImg');
+const dialogoBox = document.getElementById('dialogoBox');
+const preguntaText = document.getElementById('preguntaText');
+const preguntaNum = document.getElementById('preguntaNum');
+const progresoFill = document.getElementById('progresoFill');
+const finalSi = document.getElementById('finalSi');
+const finalNo = document.getElementById('finalNo');
 
-let game = {
-    score: 0,
-    lives: 3,
-    gameSpeed: 4,
-    gameRunning: true,
-    obstacles: [],
-    keys: {}
-};
-
-const buu = {
-    x: 80,
-    y: canvas.height - 120,
-    width: 50,
-    height: 70,
-    velY: 0,
-    jumping: false,
-    grounded: false,
-    groundY: 0
-};
-
-// TOUCH + TECLAS
-touchZone.addEventListener('touchstart', jump, { passive: false });
-touchZone.addEventListener('click', jump);
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        e.preventDefault();
-        jump();
-    }
-});
-
-function jump(e) {
-    e?.preventDefault();
-    if (buu.grounded) {
-        buu.velY = -16;
-        buu.grounded = false;
-        buu.jumping = true;
+// AGREGAR CORAZONES ANIMADOS AL FONDO
+function crearCorazonesFondo() {
+    const heartsBg = document.querySelector('.hearts-bg');
+    for(let i = 1; i <= 4; i++) {
+        const heart = document.createElement('span');
+        heart.textContent = '💖';
+        heart.className = `heart-${i}`;
+        heartsBg.appendChild(heart);
     }
 }
 
-function update() {
-    if (!game.gameRunning) return;
-    
-    buu.groundY = canvas.height - 100;
-    
-    // FÍSICA
-    buu.velY += 0.8;
-    buu.y += buu.velY;
-    if (buu.y >= buu.groundY) {
-        buu.y = buu.groundY;
-        buu.velY = 0;
-        buu.grounded = true;
-    }
-
-    // OBSTÁCULOS
-    if (Math.random() < 0.025) {
-        game.obstacles.push({
-            x: canvas.width,
-            y: Math.random() > 0.6 ? buu.groundY - 50 : buu.groundY,
-            width: 35,
-            height: 50,
-            type: Math.random() > 0.7 ? 'fuego' : 'roca'
-        });
-    }
-
-    // ACTUALIZAR OBSTÁCULOS
-    for (let i = game.obstacles.length - 1; i >= 0; i--) {
-        const obs = game.obstacles[i];
-        obs.x -= game.gameSpeed;
-        
-        // COLISIÓN
-        if (obs.x < buu.x + buu.width && obs.x + obs.width > buu.x &&
-            obs.y < buu.y + buu.height && obs.y + obs.height > buu.y) {
-            game.lives--;
-            livesEl.textContent = game.lives;
-            game.obstacles.splice(i, 1);
-            if (game.lives <= 0) endGame();
-            continue;
-        }
-        
-        // PUNTOS
-        if (obs.x + obs.width < 0) {
-            game.obstacles.splice(i, 1);
-            game.score++;
-            scoreEl.textContent = game.score;
-            game.gameSpeed += 0.05;
-        }
-    }
-
-    draw();
-    requestAnimationFrame(update);
+// INICIAR JUEGO
+function iniciarJuego() {
+    preguntaActual = 0;
+    buuImg.style.left = '15%';
+    buuImg.classList.remove('hablando', 'cerca-jenny');
+    dialogoBox.style.display = 'block';
+    finalSi.style.display = 'none';
+    finalNo.style.display = 'none';
+    progresoFill.style.width = '0%';
+    preguntaNum.textContent = '1';
+    siguientePregunta();
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // SUELO
-    ctx.fillStyle = '#90EE90';
-    ctx.fillRect(0, buu.groundY + 20, canvas.width, canvas.height - buu.groundY - 20);
-    
-    // NUBES
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    for (let i = 0; i < 3; i++) {
-        const x = (100 + i * 200 - (game.score * 2) % canvas.width + canvas.width) % (canvas.width + 200);
-        ctx.beginPath();
-        ctx.arc(x, 60 + Math.sin(i) * 15, 25, 0, Math.PI * 2);
-        ctx.arc(x + 30, 60 + Math.sin(i) * 15, 35, 0, Math.PI * 2);
-        ctx.fill();
+function siguientePregunta() {
+    if (preguntaActual >= preguntas.length) {
+        // ¡COMPLETÓ LAS 25 PREGUNTAS!
+        progresoFill.style.width = '100%';
+        buuImg.classList.add('cerca-jenny');
+        buuImg.src = 'img/buu.png'; // Refresca imagen
+        setTimeout(() => {
+            dialogoBox.style.display = 'none';
+            finalSi.style.display = 'block';
+            // CONFETI ÉPICO
+            crearConfetiEpico();
+        }, 2000);
+        return;
     }
     
-    // BUU MEJORADO
-    const pink = buu.jumping ? '#ff69b4' : '#ff1493';
-    ctx.fillStyle = pink;
-    ctx.fillRect(buu.x, buu.y, buu.width, buu.height);
+    preguntaText.textContent = preguntas[preguntaActual];
+    preguntaNum.textContent = preguntaActual + 1;
     
-    // CARA BUU
-    ctx.fillStyle = 'white';
-    ctx.fillRect(buu.x + 8, buu.y + 8, 12, 12);
-    ctx.fillRect(buu.x + 30, buu.y + 8, 12, 12);
-    ctx.fillStyle = 'black';
-    ctx.fillRect(buu.x + 11, buu.y + 11, 6, 6);
-    ctx.fillRect(buu.x + 33, buu.y + 11, 6, 6);
-    ctx.fillRect(buu.x + 18, buu.y + 40, 14, 6); // BOCA
+    // BARRA DE PROGRESO
+    const porcentaje = ((preguntaActual) / preguntas.length) * 100;
+    progresoFill.style.width = porcentaje + '%';
     
-    // ANTENAS
-    ctx.fillStyle = pink;
-    ctx.fillRect(buu.x + 12, buu.y - 3, 6, 12);
-    ctx.fillRect(buu.x + 32, buu.y - 3, 6, 12);
-    
-    // OBSTÁCULOS
-    game.obstacles.forEach(obs => {
-        if (obs.type === 'fuego') {
-            ctx.fillStyle = '#ff4500';
-            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-            ctx.fillStyle = '#ffff00';
-            ctx.fillRect(obs.x + 3, obs.y - 8, 8, 15);
-        } else {
-            ctx.fillStyle = '#8B4513';
-            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-            ctx.fillStyle = '#A0522D';
-            ctx.fillRect(obs.x + 5, obs.y + 5, obs.width - 10, 15);
-        }
-    });
+    // BUU HABLA Y CAMINA
+    buuImg.classList.add('hablando');
+    const nuevaPos = 15 + (preguntaActual * 2.2);
+    buuImg.style.left = Math.min(nuevaPos, 52) + '%';
 }
 
-function endGame() {
-    game.gameRunning = false;
-    finalScoreEl.textContent = game.score;
-    gameOverEl.style.display = 'block';
+function responder(respuesta) {
+    buuImg.classList.remove('hablando');
+    
+    if (respuesta === 'no') {
+        // JENNY DIJO NO - BUU SE PONE TRISTE
+        buuImg.style.filter = 'grayscale(1) saturate(0.5)';
+        setTimeout(() => {
+            dialogoBox.style.display = 'none';
+            finalNo.style.display = 'block';
+        }, 1200);
+        return;
+    }
+    
+    // ¡SÍ! EFECTO POSITIVO
+    buuImg.style.transform = 'scale(1.1)';
+    setTimeout(() => {
+        buuImg.style.transform = 'scale(1)';
+        preguntaActual++;
+        siguientePregunta();
+    }, 800);
 }
 
-function restartGame() {
-    game.score = 0;
-    game.lives = 3;
-    game.gameSpeed = 4;
-    game.obstacles = [];
-    game.gameRunning = true;
-    buu.y = buu.groundY;
-    scoreEl.textContent = 0;
-    livesEl.textContent = 3;
-    gameOverEl.style.display = 'none';
-    update();
+function reiniciar() {
+    location.reload(); // Reinicio completo
 }
 
-// INICIAR
-update();
+function crearConfetiEpico() {
+    for(let i = 0; i < 60; i++) {
+        setTimeout(() => {
+            const confeti = document.createElement('div');
+            confeti.innerHTML = ['💖','💕','✨','💍','🎉'][Math.floor(Math.random()*5)];
+            confeti.style.position = 'fixed';
+            confeti.style.left = Math.random() * 100 + 'vw';
+            confeti.style.top = Math.random() * 100 + 'vh';
+            confeti.style.fontSize = (Math.random() * 25 + 20) + 'px';
+            confeti.style.pointerEvents = 'none';
+            confeti.style.zIndex = '1000';
+            confeti.style.animation = 'confetiFall 3s linear forwards';
+            document.body.appendChild(confeti);
+            
+            setTimeout(() => confeti.remove(), 3000);
+        }, i * 50);
+    }
+}
+
+// TOUCH OPTIMIZADO MÓVIL
+document.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('selectstart', (e) => e.preventDefault());
+
+// INICIO AUTOMÁTICO ÉPICO
+setTimeout(() => {
+    crearCorazonesFondo();
+    iniciarJuego();
+}, 800);
+
+// AGREGAR ANIMACIÓN CONFETI AL CSS (se crea dinámicamente)
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes confetiFall {
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
