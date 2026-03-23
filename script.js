@@ -1,4 +1,3 @@
-
 function scrollToSection(id) {
   const element = document.getElementById(id);
 
