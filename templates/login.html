@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Entrar{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container narrow">
+    <article class="form-card auth-card">
+      <p class="eyebrow">Login</p>
+      <h1 class="page-title">Entrar</h1>
+
+      <form method="POST" class="message-form">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" required>
+
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" required>
+
+        <button type="submit" class="btn btn-primary">Iniciar sesión</button>
+      </form>
+    </article>
+  </div>
+</section>
+{% endblock %}
