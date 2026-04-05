@@ -7,11 +7,9 @@
     <div class="form-card">
       <p class="eyebrow">Escribe algo bonito</p>
       <h1 class="page-title">Muro de mensajes</h1>
+      <p class="logged-as">Estás escribiendo como <strong>{{ current_user.username }}</strong></p>
 
       <form method="POST" class="message-form">
-        <label for="author">Quién escribe</label>
-        <input id="author" name="author" type="text" placeholder="Diego o Jenny" required>
-
         <label for="content">Mensaje</label>
         <textarea id="content" name="content" rows="6" placeholder="Escribe algo especial..." required></textarea>
 
@@ -22,15 +20,18 @@
     <div class="messages-panel">
       {% if messages %}
         {% for message in messages %}
-          <article class="message-card">
+          <article class="message-card {% if message.user.username|lower == 'diego' %}from-diego{% elif message.user.username|lower == 'jenny' %}from-jenny{% endif %}">
             <div class="message-meta">
-              <strong>{{ message.author }}</strong>
+              <strong>{{ message.user.username }}</strong>
               <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
             </div>
             <p>{{ message.content }}</p>
-            <form action="{{ url_for('delete_message', message_id=message.id) }}" method="POST">
-              <button class="delete-btn" type="submit">Eliminar</button>
-            </form>
+
+            {% if message.user_id == current_user.id %}
+              <form action="{{ url_for('delete_message', message_id=message.id) }}" method="POST">
+                <button class="delete-btn" type="submit">Eliminar</button>
+              </form>
+            {% endif %}
           </article>
         {% endfor %}
       {% else %}
