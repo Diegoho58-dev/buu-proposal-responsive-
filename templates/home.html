@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Inicio | Jenny & Diego{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Nuestro espacio</p>
+      <h1>Un rincón para escribirnos, recordarnos y seguir construyendo lo nuestro.</h1>
+      <p class="hero-text">
+        Esta página ya no será solo una propuesta. Quiero que sea un lugar vivo,
+        donde tú y yo podamos dejar mensajes, palabras bonitas y momentos especiales.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro</a>
+        <a class="btn btn-secondary" href="{{ url_for('note') }}">Leer carta</a>
+      </div>
+    </div>
+
+    <div class="hero-card">
+      <img src="{{ url_for('static', filename='buu.jpg') }}" alt="Imagen especial de Buu" />
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Últimos mensajes</p>
+      <h2>Lo más reciente entre nosotros</h2>
+    </div>
+
+    <div class="message-list">
+      {% if latest_messages %}
+        {% for message in latest_messages %}
+          <article class="message-card">
+            <div class="message-meta">
+              <strong>{{ message.author }}</strong>
+              <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+            <p>{{ message.content }}</p>
+          </article>
+        {% endfor %}
+      {% else %}
+        <article class="empty-card">
+          <h3>Aún no hay mensajes</h3>
+          <p>El primero puede empezar hoy.</p>
+        </article>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

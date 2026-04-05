@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Muro de mensajes{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container wall-grid">
+    <div class="form-card">
+      <p class="eyebrow">Escribe algo bonito</p>
+      <h1 class="page-title">Muro de mensajes</h1>
+
+      <form method="POST" class="message-form">
+        <label for="author">Quién escribe</label>
+        <input id="author" name="author" type="text" placeholder="Diego o Jenny" required>
+
+        <label for="content">Mensaje</label>
+        <textarea id="content" name="content" rows="6" placeholder="Escribe algo especial..." required></textarea>
+
+        <button type="submit" class="btn btn-primary">Guardar mensaje</button>
+      </form>
+    </div>
+
+    <div class="messages-panel">
+      {% if messages %}
+        {% for message in messages %}
+          <article class="message-card">
+            <div class="message-meta">
+              <strong>{{ message.author }}</strong>
+              <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+            <p>{{ message.content }}</p>
+            <form action="{{ url_for('delete_message', message_id=message.id) }}" method="POST">
+              <button class="delete-btn" type="submit">Eliminar</button>
+            </form>
+          </article>
+        {% endfor %}
+      {% else %}
+        <article class="empty-card">
+          <h3>Este muro está esperando su primera historia</h3>
+          <p>Escribe el primer mensaje y empieza este espacio juntos.</p>
+        </article>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
