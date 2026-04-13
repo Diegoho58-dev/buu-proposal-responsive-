@@ -1,46 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Muro de mensajes{% endblock %}
+{% block title %}Mensajes | Jenny & Diego{% endblock %}
 
 {% block content %}
 <section class="section">
   <div class="container wall-grid">
-    <div class="form-card">
-      <p class="eyebrow">Escribe algo bonito</p>
-      <h1 class="page-title">Muro de mensajes</h1>
-      <p class="logged-as">Estás escribiendo como <strong>{{ current_user.username }}</strong></p>
+    <article class="form-card">
+      <p class="eyebrow">Nuevo mensaje</p>
+      <h1 class="page-title">Escribir en el muro</h1>
+      <p class="logged-as">Estás como <strong>{{ current_user.username }}</strong></p>
 
       <form method="POST" class="message-form">
-        <label for="content">Mensaje</label>
-        <textarea id="content" name="content" rows="6" placeholder="Escribe algo especial..." required></textarea>
-
-        <button type="submit" class="btn btn-primary">Guardar mensaje</button>
+        <label for="content">Tu mensaje</label>
+        <textarea id="content" name="content" rows="5" required placeholder="Escribe algo bonito..."></textarea>
+        <button type="submit" class="btn btn-primary">Publicar mensaje</button>
       </form>
-    </div>
+    </article>
 
-    <div class="messages-panel">
+    <section class="messages-panel">
+      <div class="section-heading">
+        <p class="eyebrow">Muro</p>
+        <h2>Mensajes compartidos</h2>
+      </div>
+
       {% if messages %}
         {% for message in messages %}
-          <article class="message-card {% if message.user.username|lower == 'diego' %}from-diego{% elif message.user.username|lower == 'jenny' %}from-jenny{% endif %}">
+          <article class="message-card">
             <div class="message-meta">
               <strong>{{ message.user.username }}</strong>
               <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
             </div>
+
             <p>{{ message.content }}</p>
 
             {% if message.user_id == current_user.id %}
-              <form action="{{ url_for('delete_message', message_id=message.id) }}" method="POST">
-                <button class="delete-btn" type="submit">Eliminar</button>
+              <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}">
+                <button type="submit" class="delete-btn">Eliminar</button>
               </form>
             {% endif %}
           </article>
         {% endfor %}
       {% else %}
         <article class="empty-card">
-          <h3>Este muro está esperando su primera historia</h3>
-          <p>Escribe el primer mensaje y empieza este espacio juntos.</p>
+          <h3>Aún no hay mensajes</h3>
+          <p>Escribe el primero para empezar este espacio.</p>
         </article>
       {% endif %}
-    </div>
+    </section>
   </div>
 </section>
 {% endblock %}
