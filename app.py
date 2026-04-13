@@ -7,36 +7,38 @@ import os
 
 app = Flask(__name__)
 
-# 🔐 CLAVE SECRETA
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "clave_super_segura")
+# Clave secreta
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
-# 🔥 BASE DE DATOS (NEON)
+# Base de datos
 database_url = os.getenv("DATABASE_URL")
 
 if not database_url:
     raise ValueError("❌ ERROR: DATABASE_URL no está configurada")
 
-# Arreglar postgres://
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 🔐 LOGIN
+# Login
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
-# 👤 MODELOS
+# Modelos
 class User(UserMixin, db.Model):
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+
+    messages = db.relationship("Message", backref="user", lazy=True, cascade="all, delete-orphan")
+
 
 class Message(db.Model):
     __tablename__ = "message"
@@ -46,12 +48,12 @@ class Message(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-# 🔄 CARGAR USUARIO
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# 🏠 HOME
+
 @app.route("/")
 def home():
     try:
@@ -59,9 +61,15 @@ def home():
     except Exception as e:
         print("ERROR BD:", e)
         latest_messages = []
+
     return render_template("home.html", latest_messages=latest_messages)
 
-# 📝 REGISTRO
+
+@app.route("/note")
+def note():
+    return render_template("note.html")
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
@@ -90,7 +98,7 @@ def register():
 
     return render_template("register.html")
 
-# 🔐 LOGIN
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -111,14 +119,14 @@ def login():
 
     return render_template("login.html")
 
-# 🚪 LOGOUT
+
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("home"))
 
-# 💬 MURO
+
 @app.route("/wall", methods=["GET", "POST"])
 @login_required
 def wall():
@@ -135,7 +143,7 @@ def wall():
     messages = Message.query.order_by(Message.created_at.desc()).all()
     return render_template("wall.html", messages=messages)
 
-# 🗑️ ELIMINAR MENSAJE
+
 @app.route("/delete/<int:message_id>", methods=["POST"])
 @login_required
 def delete_message(message_id):
@@ -147,10 +155,13 @@ def delete_message(message_id):
 
     db.session.delete(message)
     db.session.commit()
+    flash("Mensaje eliminado.")
     return redirect(url_for("wall"))
 
-# 🚀 INICIO LOCAL (NO AFECTA RENDER)
+
+with app.app_context():
+    db.create_all()
+
+
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
