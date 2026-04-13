@@ -7,12 +7,9 @@ import os
 
 app = Flask(__name__)
 
-# Clave secreta
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
-# Base de datos
 database_url = os.getenv("DATABASE_URL")
-
 if not database_url:
     raise ValueError("❌ ERROR: DATABASE_URL no está configurada")
 
@@ -24,12 +21,11 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# Login
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
-# Modelos
+
 class User(UserMixin, db.Model):
     __tablename__ = "user"
 
@@ -47,6 +43,45 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+
+class Activity(db.Model):
+    __tablename__ = "activity"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    payers = db.relationship("ActivityPayer", backref="activity", lazy=True, cascade="all, delete-orphan")
+    costs = db.relationship("ActivityCost", backref="activity", lazy=True, cascade="all, delete-orphan")
+    sales = db.relationship("ActivitySale", backref="activity", lazy=True, cascade="all, delete-orphan")
+
+
+class ActivityPayer(db.Model):
+    __tablename__ = "activity_payer"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=False)
+
+
+class ActivityCost(db.Model):
+    __tablename__ = "activity_cost"
+
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=False)
+
+
+class ActivitySale(db.Model):
+    __tablename__ = "activity_sale"
+
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(200), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"), nullable=False)
 
 
 @login_manager.user_loader
@@ -157,6 +192,110 @@ def delete_message(message_id):
     db.session.commit()
     flash("Mensaje eliminado.")
     return redirect(url_for("wall"))
+
+
+@app.route("/activities", methods=["GET", "POST"])
+@login_required
+def activities():
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
+
+        if not title:
+            flash("El nombre de la actividad es obligatorio.")
+            return redirect(url_for("activities"))
+
+        activity = Activity(title=title, description=description)
+        db.session.add(activity)
+        db.session.commit()
+        flash("Actividad creada correctamente.")
+        return redirect(url_for("activity_detail", activity_id=activity.id))
+
+    all_activities = Activity.query.order_by(Activity.created_at.desc()).all()
+    return render_template("activities.html", activities=all_activities)
+
+
+@app.route("/activities/<int:activity_id>", methods=["GET"])
+@login_required
+def activity_detail(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+
+    total_costs = sum(cost.amount for cost in activity.costs)
+    total_sales = sum(sale.amount for sale in activity.sales)
+    balance = total_sales - total_costs
+
+    return render_template(
+        "activity_detail.html",
+        activity=activity,
+        total_costs=total_costs,
+        total_sales=total_sales,
+        balance=balance
+    )
+
+
+@app.route("/activities/<int:activity_id>/add-payer", methods=["POST"])
+@login_required
+def add_payer(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    name = request.form.get("name", "").strip()
+
+    if not name:
+        flash("Debes escribir el nombre de la persona.")
+        return redirect(url_for("activity_detail", activity_id=activity.id))
+
+    payer = ActivityPayer(name=name, activity_id=activity.id)
+    db.session.add(payer)
+    db.session.commit()
+    flash("Persona agregada.")
+    return redirect(url_for("activity_detail", activity_id=activity.id))
+
+
+@app.route("/activities/<int:activity_id>/add-cost", methods=["POST"])
+@login_required
+def add_cost(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    description = request.form.get("description", "").strip()
+    amount_raw = request.form.get("amount", "").strip()
+
+    if not description or not amount_raw:
+        flash("Completa la descripción y el valor del costo.")
+        return redirect(url_for("activity_detail", activity_id=activity.id))
+
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        flash("El valor del costo debe ser numérico.")
+        return redirect(url_for("activity_detail", activity_id=activity.id))
+
+    cost = ActivityCost(description=description, amount=amount, activity_id=activity.id)
+    db.session.add(cost)
+    db.session.commit()
+    flash("Costo agregado.")
+    return redirect(url_for("activity_detail", activity_id=activity.id))
+
+
+@app.route("/activities/<int:activity_id>/add-sale", methods=["POST"])
+@login_required
+def add_sale(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    description = request.form.get("description", "").strip()
+    amount_raw = request.form.get("amount", "").strip()
+
+    if not description or not amount_raw:
+        flash("Completa la descripción y el valor de la venta.")
+        return redirect(url_for("activity_detail", activity_id=activity.id))
+
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        flash("El valor de la venta debe ser numérico.")
+        return redirect(url_for("activity_detail", activity_id=activity.id))
+
+    sale = ActivitySale(description=description, amount=amount, activity_id=activity.id)
+    db.session.add(sale)
+    db.session.commit()
+    flash("Venta agregada.")
+    return redirect(url_for("activity_detail", activity_id=activity.id))
 
 
 with app.app_context():
