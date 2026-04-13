@@ -1,107 +1,53 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Jenny & Diego{% endblock %}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <header class="site-header">
-    <nav class="nav container">
-      <a class="brand" href="{{ url_for('home') }}">Jenny & Diego</a>
-
-      <div class="nav-links">
-        <a href="{{ url_for('home') }}">Inicio</a>
-
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('wall') }}">Mensajes</a>
-          <a href="{{ url_for('note') }}">Carta</a>
-          <a href="{{ url_for('activities') }}">Actividades</a>
-          <span class="user-pill">Hola, {{ current_user.username }}</span>
-          <a href="{{ url_for('logout') }}">Salir</a>
-        {% else %}
-          <a href="{{ url_for('login') }}">Entrar</a>
-          <a href="{{ url_for('register') }}">Crear cuenta</a>
-        {% endif %}
-      </div>
-    </nav>
-  </header>
-
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <section class="flash-wrap container">
-        {% for message in messages %}
-          <div class="flash-message">{{ message }}</div>
-        {% endfor %}
-      </section>
-    {% endif %}
-  {% endwith %}
-
-  <main>
-    {% block content %}{% endblock %}
-  </main>
-
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
-</body>
-</html>
-templates/home.html completo
-Tu home.html actual ya extiende base.html, muestra últimos mensajes y tiene botones para muro y carta, así que aquí solo lo dejo consistente con los atributos reales del modelo Message, usando message.user.username en vez de message.author.
-
-xml
 {% extends "base.html" %}
-{% block title %}Inicio | Jenny & Diego{% endblock %}
+{% block title %}Mensajes | Jenny & Diego{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <div class="container hero-grid">
-    <div class="hero-copy">
-      <p class="eyebrow">Nuestro espacio</p>
-      <h1>Un rincón para escribirnos y guardar momentos.</h1>
+<section class="section">
+  <div class="container wall-grid">
+    <article class="form-card">
+      <p class="eyebrow">Muro privado</p>
+      <h1 class="page-title">Deja un mensaje</h1>
       <p class="hero-text">
-        Esta página ya no será solo una propuesta. Quiero que sea un lugar vivo,
-        donde tú y yo podamos dejar mensajes, palabras bonitas y momentos especiales.
+        Este espacio es para escribir algo bonito, guardar un recuerdo o decir algo importante.
       </p>
 
-      <div class="hero-actions">
-        {% if current_user.is_authenticated %}
-          <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro</a>
-          <a class="btn btn-secondary" href="{{ url_for('note') }}">Leer carta</a>
-        {% else %}
-          <a class="btn btn-primary" href="{{ url_for('login') }}">Iniciar sesión</a>
-          <a class="btn btn-secondary" href="{{ url_for('register') }}">Crear cuenta</a>
-        {% endif %}
-      </div>
-    </div>
+      <form method="POST" class="message-form">
+        <label for="content">Tu mensaje</label>
+        <textarea id="content" name="content" rows="5" placeholder="Escribe aquí..." required></textarea>
+        <button type="submit" class="btn btn-primary">Guardar mensaje</button>
+      </form>
+    </article>
 
-    <div class="hero-card">
+    <section class="messages-panel">
       <div class="section-heading">
-        <p class="eyebrow">Últimos mensajes</p>
-        <h2>Lo más reciente entre nosotros</h2>
+        <p class="eyebrow">Historial</p>
+        <h2>Mensajes guardados</h2>
       </div>
 
-      {% if latest_messages %}
-        <div class="message-list">
-          {% for message in latest_messages %}
-            <article class="message-card {% if message.user.username|lower == 'diego' %}from-diego{% else %}from-jenny{% endif %}">
-              <div class="message-meta">
-                <strong>{{ message.user.username }}</strong>
-                <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-              </div>
-              <p>{{ message.content }}</p>
-            </article>
-          {% endfor %}
-        </div>
+      {% if messages %}
+        {% for message in messages %}
+          <article class="message-card {% if message.user.username|lower == 'diego' %}from-diego{% else %}from-jenny{% endif %}">
+            <div class="message-meta">
+              <strong>{{ message.user.username }}</strong>
+              <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+            </div>
+
+            <p>{{ message.content }}</p>
+
+            {% if message.user_id == current_user.id %}
+              <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}">
+                <button type="submit" class="delete-btn">Eliminar</button>
+              </form>
+            {% endif %}
+          </article>
+        {% endfor %}
       {% else %}
         <article class="empty-card">
-          <h3>Aún no hay mensajes</h3>
-          <p>El primero puede empezar hoy.</p>
+          <h3>No hay mensajes todavía</h3>
+          <p>Escribe el primero para empezar a llenar este espacio.</p>
         </article>
       {% endif %}
-    </div>
+    </section>
   </div>
 </section>
 {% endblock %}
