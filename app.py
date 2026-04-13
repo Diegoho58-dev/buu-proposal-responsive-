@@ -6,24 +6,28 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # 🔐 necesario para sesiones
+app.secret_key = "supersecretkey"
 
-# 🔥 CONEXIÓN A BASE DE DATOS (SUPABASE)
+# 🔥 BASE DE DATOS (SUPABASE DESDE RENDER)
 database_url = os.getenv("DATABASE_URL")
 
 if not database_url:
-    raise ValueError("❌ DATABASE_URL no está configurada en Render")
+    raise ValueError("DATABASE_URL no está configurada")
 
-# 🔧 Arreglo típico de Render + PostgreSQL
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# 🔥 Evita errores de conexión
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True
+}
+
 db = SQLAlchemy(app)
 
-# 🔐 LOGIN MANAGER
+# 🔐 LOGIN
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
@@ -66,8 +70,7 @@ def register():
             flash("Completa todos los campos.")
             return redirect(url_for("register"))
 
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
+        if User.query.filter_by(username=username).first():
             flash("Ese usuario ya existe.")
             return redirect(url_for("register"))
 
@@ -147,10 +150,6 @@ def delete_message(message_id):
     db.session.commit()
     return redirect(url_for("wall"))
 
-# 🔥 CREAR TABLAS (solo si no existen)
-with app.app_context():
-    db.create_all()
-
-# ▶️ EJECUCIÓN LOCAL
+# 🚀 EJECUCIÓN LOCAL
 if __name__ == "__main__":
     app.run(debug=True)
