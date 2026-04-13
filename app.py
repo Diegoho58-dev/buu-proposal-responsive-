@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # 🔥 CAMBIO IMPORTANTE (ANTES SQLITE, AHORA SUPABASE)
-database_url = os.getenv("DATABASE_URL")
+database_url = os.getenv("postgresql://postgres:[Danaleja.jenny58*]@db.pnbeukklrpugzcdlosbf.supabase.co:5432/postgres")
 
 # 👇 Esto arregla error típico de Render + Supabase
 if database_url and database_url.startswith("postgres://"):
