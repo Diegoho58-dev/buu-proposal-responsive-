@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Jenny & Diego{% endblock %}</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,6 +20,7 @@
         {% if current_user.is_authenticated %}
           <a href="{{ url_for('wall') }}">Mensajes</a>
           <a href="{{ url_for('note') }}">Carta</a>
+          <a href="{{ url_for('activities') }}">Actividades</a>
           <span class="user-pill">Hola, {{ current_user.username }}</span>
           <a href="{{ url_for('logout') }}">Salir</a>
         {% else %}
@@ -48,3 +48,60 @@
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>
+templates/home.html completo
+Tu home.html actual ya extiende base.html, muestra últimos mensajes y tiene botones para muro y carta, así que aquí solo lo dejo consistente con los atributos reales del modelo Message, usando message.user.username en vez de message.author.
+
+xml
+{% extends "base.html" %}
+{% block title %}Inicio | Jenny & Diego{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Nuestro espacio</p>
+      <h1>Un rincón para escribirnos y guardar momentos.</h1>
+      <p class="hero-text">
+        Esta página ya no será solo una propuesta. Quiero que sea un lugar vivo,
+        donde tú y yo podamos dejar mensajes, palabras bonitas y momentos especiales.
+      </p>
+
+      <div class="hero-actions">
+        {% if current_user.is_authenticated %}
+          <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro</a>
+          <a class="btn btn-secondary" href="{{ url_for('note') }}">Leer carta</a>
+        {% else %}
+          <a class="btn btn-primary" href="{{ url_for('login') }}">Iniciar sesión</a>
+          <a class="btn btn-secondary" href="{{ url_for('register') }}">Crear cuenta</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="hero-card">
+      <div class="section-heading">
+        <p class="eyebrow">Últimos mensajes</p>
+        <h2>Lo más reciente entre nosotros</h2>
+      </div>
+
+      {% if latest_messages %}
+        <div class="message-list">
+          {% for message in latest_messages %}
+            <article class="message-card {% if message.user.username|lower == 'diego' %}from-diego{% else %}from-jenny{% endif %}">
+              <div class="message-meta">
+                <strong>{{ message.user.username }}</strong>
+                <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+              </div>
+              <p>{{ message.content }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <article class="empty-card">
+          <h3>Aún no hay mensajes</h3>
+          <p>El primero puede empezar hoy.</p>
+        </article>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
