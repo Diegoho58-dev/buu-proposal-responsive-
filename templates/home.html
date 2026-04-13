@@ -11,6 +11,7 @@
         Esta página ya no será solo una propuesta. Quiero que sea un lugar vivo,
         donde tú y yo podamos dejar mensajes, palabras bonitas y momentos especiales.
       </p>
+
       <div class="hero-actions">
         <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro</a>
         <a class="btn btn-secondary" href="{{ url_for('note') }}">Leer carta</a>
@@ -18,7 +19,7 @@
     </div>
 
     <div class="hero-card">
-      <img src="{{ url_for('static', filename='buu.jpg') }}" alt="Imagen especial de Buu" />
+      <img src="{{ url_for('static', filename='buu.jpg') }}" alt="Imagen especial de Buu">
     </div>
   </div>
 </section>
@@ -35,7 +36,7 @@
         {% for message in latest_messages %}
           <article class="message-card">
             <div class="message-meta">
-              <strong>{{ message.author }}</strong>
+              <strong>{{ message.user.username }}</strong>
               <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
             </div>
             <p>{{ message.content }}</p>
@@ -51,3 +52,4 @@
   </div>
 </section>
 {% endblock %}
+        
