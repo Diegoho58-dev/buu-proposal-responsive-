@@ -1,4 +1,3 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,33 +5,27 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
 
-# 🔥 BASE DE DATOS (SUPABASE DESDE RENDER)
+# 🔐 Clave secreta (puedes cambiarla)
+app.config['SECRET_KEY'] = 'supersecretkey'
+
+# 🔥 CONEXIÓN A BASE DE DATOS (NEON)
 database_url = os.getenv("DATABASE_URL")
 
-if not database_url:
-    raise ValueError("DATABASE_URL no está configurada")
-
-if database_url.startswith("postgres://"):
+if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 🔥 Evita errores de conexión
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "pool_pre_ping": True
-}
-
 db = SQLAlchemy(app)
 
-# 🔐 LOGIN
+# 🔐 LOGIN MANAGER
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
-# 🧑‍💻 MODELOS
+# 👤 MODELOS
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -45,7 +38,7 @@ class Message(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     user = db.relationship("User", backref="messages")
 
-# 🔄 CARGAR USUARIO
+# 🔄 CARGA USUARIO
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -53,7 +46,10 @@ def load_user(user_id):
 # 🏠 HOME
 @app.route("/")
 def home():
-    latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
+    try:
+        latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
+    except:
+        latest_messages = []
     return render_template("home.html", latest_messages=latest_messages)
 
 # 📝 REGISTRO
@@ -70,13 +66,13 @@ def register():
             flash("Completa todos los campos.")
             return redirect(url_for("register"))
 
-        if User.query.filter_by(username=username).first():
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
             flash("Ese usuario ya existe.")
             return redirect(url_for("register"))
 
         hashed_password = generate_password_hash(password)
         user = User(username=username, password_hash=hashed_password)
-
         db.session.add(user)
         db.session.commit()
 
@@ -130,7 +126,7 @@ def wall():
     messages = Message.query.order_by(Message.created_at.desc()).all()
     return render_template("wall.html", messages=messages)
 
-# 📝 NOTA
+# 🗒️ NOTA
 @app.route("/note")
 @login_required
 def note():
@@ -150,6 +146,8 @@ def delete_message(message_id):
     db.session.commit()
     return redirect(url_for("wall"))
 
-# 🚀 EJECUCIÓN LOCAL
+# 🚀 SOLO PARA LOCAL (NO ROMPE RENDER)
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
