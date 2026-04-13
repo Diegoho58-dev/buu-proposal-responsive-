@@ -12,7 +12,11 @@
   --container: 1120px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   font-family: "Inter", sans-serif;
@@ -27,7 +31,10 @@ img {
   border-radius: calc(var(--radius) - 8px);
 }
 
-a { color: inherit; text-decoration: none; }
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
 .container {
   width: min(100% - 32px, var(--container));
@@ -36,6 +43,7 @@ a { color: inherit; text-decoration: none; }
 
 .narrow {
   width: min(100% - 32px, 760px);
+  margin: 0 auto;
 }
 
 .site-header {
@@ -64,6 +72,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   gap: 18px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .nav-links a {
@@ -130,6 +139,7 @@ a { color: inherit; text-decoration: none; }
   padding: 14px 22px;
   font-weight: 700;
   cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .btn-primary {
@@ -140,6 +150,7 @@ a { color: inherit; text-decoration: none; }
 .btn-primary:hover,
 .delete-btn:hover {
   background: var(--primary-dark);
+  color: #fff;
 }
 
 .btn-secondary {
@@ -165,6 +176,10 @@ a { color: inherit; text-decoration: none; }
   padding: 24px;
 }
 
+.message-card {
+  padding: 22px;
+}
+
 .section-heading {
   margin-bottom: 24px;
 }
@@ -183,10 +198,6 @@ a { color: inherit; text-decoration: none; }
 .wall-grid {
   grid-template-columns: 420px 1fr;
   align-items: start;
-}
-
-.message-card {
-  padding: 22px;
 }
 
 .message-meta {
@@ -234,36 +245,6 @@ a { color: inherit; text-decoration: none; }
   margin-top: 12px;
 }
 
-@media (max-width: 900px) {
-  .hero-grid,
-  .wall-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-copy h1 {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 640px) {
-  .nav {
-    min-height: auto;
-    padding: 18px 0;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero,
-  .section {
-    padding: 40px 0;
-  }
-
-  .btn,
-  .delete-btn {
-    width: 100%;
-    text-align: center;
-  }
-}
 .auth-card {
   max-width: 620px;
   margin: 0 auto;
@@ -294,12 +275,33 @@ a { color: inherit; text-decoration: none; }
   padding: 10px 14px;
 }
 
-.from-diego {
-  border-color: rgba(89, 109, 202, 0.18);
-  background: #f5f7ff;
+@media (max-width: 900px) {
+  .hero-grid,
+  .wall-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-copy h1 {
+    max-width: 100%;
+  }
 }
 
-.from-jenny {
-  border-color: rgba(199, 81, 125, 0.18);
-  background: #fff4f7;
+@media (max-width: 640px) {
+  .nav {
+    min-height: auto;
+    padding: 18px 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero,
+  .section {
+    padding: 40px 0;
+  }
+
+  .btn,
+  .delete-btn {
+    width: 100%;
+    text-align: center;
+  }
 }
