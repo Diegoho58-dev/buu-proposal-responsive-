@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 
 app = Flask(__name__)
@@ -24,6 +25,25 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
+
+COLOMBIA_TZ = ZoneInfo("America/Bogota")
+UTC_TZ = ZoneInfo("UTC")
+
+
+@app.template_filter("colombia_time")
+def colombia_time(dt):
+    if dt is None:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC_TZ)
+    return dt.astimezone(COLOMBIA_TZ)
+
+
+@app.template_filter("datetime_format")
+def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
+    if not dt:
+        return ""
+    return dt.strftime(fmt)
 
 
 class User(UserMixin, db.Model):
@@ -300,7 +320,6 @@ def add_sale(activity_id):
 
 with app.app_context():
     db.create_all()
-
 
 if __name__ == "__main__":
     app.run(debug=True)
