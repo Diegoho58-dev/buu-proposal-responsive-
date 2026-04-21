@@ -27,7 +27,7 @@
           <article class="message-card">
             <div class="message-meta">
               <strong>{{ message.user.username }}</strong>
-              <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+              <span>{{ message.created_at | colombia_time | datetime_format }}</span>
             </div>
 
             <p>{{ message.content }}</p>
