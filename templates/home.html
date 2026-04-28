@@ -8,12 +8,19 @@
       <p class="eyebrow">Nuestro espacio</p>
       <h1>Un rincón para escribirnos, recordarnos y seguir construyendo lo nuestro.</h1>
       <p class="hero-text">
-        Esta página ya no será solo una propuesta. Quiero que sea un lugar vivo,
-        donde tú y yo podamos dejar mensajes, palabras bonitas y momentos especiales.
+        Esta página será un lugar especial para guardar momentos, palabras bonitas y recuerdos
+        importantes. Aquí solo verás la parte general del proyecto.
       </p>
 
       <div class="hero-actions">
-        <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro</a>
+        {% if current_user.is_authenticated %}
+          <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro privado</a>
+          <a class="btn btn-secondary" href="{{ url_for('activities') }}">Ver actividades</a>
+        {% else %}
+          <a class="btn btn-primary" href="{{ url_for('login') }}">Iniciar sesión</a>
+          <a class="btn btn-secondary" href="{{ url_for('register') }}">Crear cuenta</a>
+        {% endif %}
+
         <a class="btn btn-secondary" href="{{ url_for('note') }}">Leer carta</a>
       </div>
     </div>
@@ -25,28 +32,18 @@
 </section>
 
 <section class="section">
-  <div class="container">
-    <div class="section-heading">
-      <p class="eyebrow">Últimos mensajes</p>
-      <h2>Lo más reciente entre nosotros</h2>
-    </div>
-
-    <div class="message-list">
-      {% if latest_messages %}
-        {% for message in latest_messages %}
-          <article class="message-card">
-            <div class="message-meta">
-              <strong>{{ message.user.username }}</strong>
-              <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-            </div>
-            <p>{{ message.content }}</p>
-          </article>
-        {% endfor %}
-      {% else %}
-       
-      {% endif %}
-    </div>
+  <div class="container narrow">
+    <article class="letter-card">
+      <p class="eyebrow">Privacidad</p>
+      <h2 class="section-title">Un espacio más reservado</h2>
+      <p>
+        Los mensajes no aparecerán en la página principal. El home será solo una presentación
+        general, mientras que el muro quedará como una zona privada para usuarios con sesión iniciada.
+      </p>
+      <p>
+        Así mantienes una entrada más limpia y dejas lo personal dentro del área protegida.
+      </p>
+    </article>
   </div>
 </section>
 {% endblock %}
-        
