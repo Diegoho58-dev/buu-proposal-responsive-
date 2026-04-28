@@ -142,11 +142,20 @@ def get_chat_partner():
 
 @app.route("/")
 def home():
-    try:
-        latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
-    except Exception as e:
-        print("ERROR BD:", e)
-        latest_messages = []
+    latest_messages = []
+
+    if current_user.is_authenticated:
+        try:
+            partner = get_chat_partner()
+
+            if partner:
+                latest_messages = Message.query.filter(
+                    ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
+                    ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
+                ).order_by(Message.created_at.desc()).limit(6).all()
+        except Exception as e:
+            print("ERROR BD:", e)
+            latest_messages = []
 
     return render_template("home.html", latest_messages=latest_messages)
 
@@ -240,7 +249,7 @@ def wall():
     messages = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
         ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.created_at.desc()).all()
+    ).order_by(Message.created_at.asc()).all()
 
     return render_template("wall.html", messages=messages, partner=partner)
 
