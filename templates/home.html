@@ -1,26 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Inicio | Jenny & Diego{% endblock %}
+{% block title %}Inicio{% endblock %}
 
 {% block content %}
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow">Nuestro espacio</p>
-      <h1>Un rincón para escribirnos, recordarnos y seguir construyendo lo nuestro.</h1>
+      <p class="eyebrow">Espacio privado</p>
+      <h1>Un lugar para sus mensajes y recuerdos</h1>
       <p class="hero-text">
-        Esta página ya no será solo una propuesta. Quiero que sea un lugar vivo,
-        donde tú y yo podamos dejar mensajes, palabras bonitas y momentos especiales.
+        Aquí pueden dejar mensajes bonitos, revisar actividades y compartir momentos especiales.
       </p>
 
       <div class="hero-actions">
-        <a class="btn btn-primary" href="{{ url_for('wall') }}">Ir al muro</a>
-        <a class="btn btn-secondary" href="{{ url_for('note') }}">Leer carta</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('wall') }}" class="btn btn-primary">Ir al chat</a>
+          <a href="{{ url_for('activities') }}" class="btn btn-secondary">Ver actividades</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar sesión</a>
+          <a href="{{ url_for('register') }}" class="btn btn-secondary">Crear cuenta</a>
+        {% endif %}
       </div>
     </div>
 
-    <div class="hero-card">
-      <img src="{{ url_for('static', filename='buu.jpg') }}" alt="Imagen especial de Buu">
-    </div>
+    <article class="hero-card">
+      <p class="logged-as">
+        {% if current_user.is_authenticated %}
+          Estás como {{ current_user.username }}
+        {% else %}
+          Ingresa para ver el contenido
+        {% endif %}
+      </p>
+    </article>
   </div>
 </section>
 
@@ -28,7 +38,7 @@
   <div class="container">
     <div class="section-heading">
       <p class="eyebrow">Últimos mensajes</p>
-      <h2>Lo más reciente entre nosotros</h2>
+      <h2>Lo más reciente</h2>
     </div>
 
     <div class="message-list">
@@ -36,8 +46,14 @@
         {% for message in latest_messages %}
           <article class="message-card">
             <div class="message-meta">
-              <strong>{{ message.user.username }}</strong>
-              <span>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+              <strong>
+                {% if message.sender %}
+                  {{ message.sender.username }}
+                {% else %}
+                  {{ message.user.username }}
+                {% endif %}
+              </strong>
+              <span>{{ message.created_at | colombia_time | datetime_format }}</span>
             </div>
             <p>{{ message.content }}</p>
           </article>
@@ -45,11 +61,10 @@
       {% else %}
         <article class="empty-card">
           <h3>Aún no hay mensajes</h3>
-          <p>El primero puede empezar hoy.</p>
+          <p>Cuando escriban en el chat, aparecerán aquí.</p>
         </article>
       {% endif %}
     </div>
   </div>
 </section>
 {% endblock %}
-        
