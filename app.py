@@ -53,7 +53,27 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    messages = db.relationship("Message", backref="user", lazy=True, cascade="all, delete-orphan")
+    messages = db.relationship(
+        "Message",
+        foreign_keys="Message.user_id",
+        backref="user",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+    sent_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.sender_id",
+        backref="sender",
+        lazy=True
+    )
+
+    received_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.receiver_id",
+        backref="receiver",
+        lazy=True
+    )
 
 
 class Message(db.Model):
@@ -62,7 +82,10 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
 
 class Activity(db.Model):
@@ -107,6 +130,14 @@ class ActivitySale(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+def get_chat_partner():
+    if current_user.id == 2:
+        return User.query.get(3)
+    elif current_user.id == 3:
+        return User.query.get(2)
+    return None
 
 
 @app.route("/")
@@ -185,18 +216,33 @@ def logout():
 @app.route("/wall", methods=["GET", "POST"])
 @login_required
 def wall():
+    partner = get_chat_partner()
+
+    if not partner:
+        flash("Este usuario no está habilitado para el chat principal.")
+        return render_template("wall.html", messages=[], partner=None)
+
     if request.method == "POST":
         content = request.form.get("content", "").strip()
 
         if content:
-            message = Message(content=content, user_id=current_user.id)
+            message = Message(
+                content=content,
+                user_id=current_user.id,
+                sender_id=current_user.id,
+                receiver_id=partner.id
+            )
             db.session.add(message)
             db.session.commit()
 
         return redirect(url_for("wall"))
 
-    messages = Message.query.order_by(Message.created_at.desc()).all()
-    return render_template("wall.html", messages=messages)
+    messages = Message.query.filter(
+        ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
+        ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
+    ).order_by(Message.created_at.desc()).all()
+
+    return render_template("wall.html", messages=messages, partner=partner)
 
 
 @app.route("/delete/<int:message_id>", methods=["POST"])
@@ -204,7 +250,7 @@ def wall():
 def delete_message(message_id):
     message = Message.query.get_or_404(message_id)
 
-    if message.user_id != current_user.id:
+    if message.sender_id != current_user.id:
         flash("No puedes borrar este mensaje.")
         return redirect(url_for("wall"))
 
