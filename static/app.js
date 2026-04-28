@@ -2,10 +2,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const textareas = document.querySelectorAll("textarea");
 
   textareas.forEach((textarea) => {
-    textarea.addEventListener("input", () => {
+    const resize = () => {
       textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    });
+      textarea.style.height = textarea.scrollHeight + "px";
+    };
+
+    resize();
+    textarea.addEventListener("input", resize);
   });
 
   const toggleButton = document.querySelector("[data-toggle-password]");
@@ -13,18 +16,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (toggleButton && passwordInput) {
     toggleButton.addEventListener("click", () => {
-      const visible = passwordInput.type === "text";
-
-      passwordInput.type = visible ? "password" : "text";
-      toggleButton.textContent = visible ? "👁" : "🙈";
+      const hidden = passwordInput.type === "password";
+      passwordInput.type = hidden ? "text" : "password";
+      toggleButton.textContent = hidden ? "🙈" : "👁";
       toggleButton.setAttribute(
         "aria-label",
-        visible ? "Mostrar contraseña" : "Ocultar contraseña"
-      );
-      toggleButton.setAttribute(
-        "aria-pressed",
-        visible ? "false" : "true"
+        hidden ? "Ocultar contraseña" : "Mostrar contraseña"
       );
     });
+  }
+
+  const chatMessages = document.querySelector(".chat-messages");
+  if (chatMessages) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 });
