@@ -111,11 +111,14 @@ def load_user(user_id):
 
 @app.route("/")
 def home():
-    try:
-        latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
-    except Exception as e:
-        print("ERROR BD:", e)
-        latest_messages = []
+    latest_messages = []
+
+    if current_user.is_authenticated:
+        try:
+            latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
+        except Exception as e:
+            print("ERROR BD:", e)
+            latest_messages = []
 
     return render_template("home.html", latest_messages=latest_messages)
 
