@@ -1,49 +1,73 @@
 {% extends "base.html" %}
-{% block title %}Entrar{% endblock %}
+{% block title %}Inicio{% endblock %}
 
 {% block content %}
-<section class="section auth-section">
-  <div class="container narrow">
-    <article class="form-card auth-card">
-      <p class="eyebrow">Login</p>
-      <h1 class="page-title">Entrar</h1>
-      <p class="auth-text">
-        Ingresa con tu usuario y contraseña para ver el muro, los mensajes y las actividades.
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">Espacio privado</p>
+      <h1>Un rincón para sus mensajes y momentos</h1>
+      <p class="hero-text">
+        Un espacio sencillo para conversar, guardar recuerdos y compartir actividades especiales.
       </p>
 
-      <form method="POST" class="message-form auth-form">
-        <label for="username">Usuario</label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          placeholder="Escribe tu usuario"
-          required
-        >
+      <div class="hero-actions">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('wall') }}" class="btn btn-primary">Abrir chat</a>
+          <a href="{{ url_for('activities') }}" class="btn btn-secondary">Ver actividades</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar sesión</a>
+          <a href="{{ url_for('register') }}" class="btn btn-secondary">Crear cuenta</a>
+        {% endif %}
+      </div>
+    </div>
 
-        <label for="password">Contraseña</label>
-        <div class="password-field">
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Escribe tu contraseña"
-            required
-          >
-          <button
-            type="button"
-            class="toggle-password"
-            data-toggle-password
-            aria-label="Mostrar contraseña"
-            aria-pressed="false"
-          >
-            👁
-          </button>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-block">Iniciar sesión</button>
-      </form>
+    <article class="hero-card">
+      <img src="{{ url_for('static', filename='buu.jpg') if false else '' }}" alt="">
+      <p class="logged-as">
+        {% if current_user.is_authenticated %}
+          Estás dentro como {{ current_user.username }}
+        {% else %}
+          Ingresa para ver el contenido privado
+        {% endif %}
+      </p>
     </article>
   </div>
 </section>
+
+{% if current_user.is_authenticated %}
+<section class="section">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Últimos mensajes</p>
+      <h2>Lo más reciente del chat</h2>
+    </div>
+
+    <div class="message-list">
+      {% if latest_messages %}
+        {% for message in latest_messages %}
+          <article class="message-card {% if message.sender_id == current_user.id %}from-diego{% else %}from-jenny{% endif %}">
+            <div class="message-meta">
+              <strong>
+                {% if message.sender %}
+                  {{ message.sender.username }}
+                {% else %}
+                  {{ message.user.username }}
+                {% endif %}
+              </strong>
+              <span>{{ message.created_at | colombia_time | datetime_format }}</span>
+            </div>
+            <p>{{ message.content }}</p>
+          </article>
+        {% endfor %}
+      {% else %}
+        <article class="empty-card">
+          <h3>Aún no hay mensajes</h3>
+          <p>Cuando escriban en el chat, aquí aparecerán los más recientes.</p>
+        </article>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
 {% endblock %}
