@@ -53,7 +53,27 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    messages = db.relationship("Message", backref="user", lazy=True, cascade="all, delete-orphan")
+    messages = db.relationship(
+        "Message",
+        foreign_keys="Message.user_id",
+        backref="user",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+    sent_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.sender_id",
+        backref="sender",
+        lazy=True
+    )
+
+    received_messages = db.relationship(
+        "Message",
+        foreign_keys="Message.receiver_id",
+        backref="receiver",
+        lazy=True
+    )
 
 
 class Message(db.Model):
@@ -62,7 +82,11 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
 
 class Activity(db.Model):
@@ -111,7 +135,13 @@ def load_user(user_id):
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    try:
+        latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
+    except Exception as e:
+        print("ERROR BD:", e)
+        latest_messages = []
+
+    return render_template("home.html", latest_messages=latest_messages)
 
 
 @app.route("/note")
