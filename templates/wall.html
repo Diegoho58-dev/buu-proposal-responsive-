@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Mensajes | Jenny & Diego{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container wall-grid">
+    <article class="form-card">
+      <p class="eyebrow">Nuevo mensaje</p>
+      <h1 class="page-title">Escribir en el muro</h1>
+      <p class="logged-as">Estás como <strong>{{ current_user.username }}</strong></p>
+
+      <form method="POST" class="message-form">
+        <label for="content">Tu mensaje</label>
+        <textarea id="content" name="content" rows="5" required placeholder="Escribe algo bonito..."></textarea>
+        <button type="submit" class="btn btn-primary">Publicar mensaje</button>
+      </form>
+    </article>
+
+    <section class="messages-panel">
+      <div class="section-heading">
+        <p class="eyebrow">Muro</p>
+        <h2>Mensajes compartidos</h2>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+          <article class="message-card">
+            <div class="message-meta">
+              <strong>{{ message.user.username }}</strong>
+              <span>{{ message.created_at | colombia_time | datetime_format }}</span>
+            </div>
+
+            <p>{{ message.content }}</p>
+
+            {% if message.user_id == current_user.id %}
+              <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}">
+                <button type="submit" class="delete-btn">Eliminar</button>
+              </form>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        <article class="empty-card">
+          <h3>Aún no hay mensajes</h3>
+          <p>Escribe el primero para empezar este espacio.</p>
+        </article>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endblock %}
