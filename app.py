@@ -53,27 +53,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    messages = db.relationship(
-        "Message",
-        foreign_keys="Message.user_id",
-        backref="user",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
-
-    sent_messages = db.relationship(
-        "Message",
-        foreign_keys="Message.sender_id",
-        backref="sender",
-        lazy=True
-    )
-
-    received_messages = db.relationship(
-        "Message",
-        foreign_keys="Message.receiver_id",
-        backref="receiver",
-        lazy=True
-    )
+    messages = db.relationship("Message", backref="user", lazy=True, cascade="all, delete-orphan")
 
 
 class Message(db.Model):
@@ -82,10 +62,7 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
 
 class Activity(db.Model):
@@ -132,27 +109,13 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-def get_chat_partner():
-    if current_user.id == 2:
-        return User.query.get(3)
-    elif current_user.id == 3:
-        return User.query.get(2)
-    return None
-
-
 @app.route("/")
 def home():
     latest_messages = []
 
     if current_user.is_authenticated:
         try:
-            partner = get_chat_partner()
-
-            if partner:
-                latest_messages = Message.query.filter(
-                    ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
-                    ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-                ).order_by(Message.created_at.desc()).limit(6).all()
+            latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
         except Exception as e:
             print("ERROR BD:", e)
             latest_messages = []
@@ -225,156 +188,19 @@ def logout():
 @app.route("/wall", methods=["GET", "POST"])
 @login_required
 def wall():
-    partner = get_chat_partner()
-
-    if not partner:
-        flash("Este usuario no está habilitado para el chat principal.")
-        return render_template("wall.html", messages=[], partner=None)
-
     if request.method == "POST":
         content = request.form.get("content", "").strip()
 
         if content:
-            message = Message(
-                content=content,
-                user_id=current_user.id,
-                sender_id=current_user.id,
-                receiver_id=partner.id
-            )
+            message = Message(content=content, user_id=current_user.id)
             db.session.add(message)
             db.session.commit()
 
         return redirect(url_for("wall"))
 
-    messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
-        ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.created_at.asc()).all()
-
-    return render_template("wall.html", messages=messages, partner=partner)
+    messages = Message.query.order_by(Message.created_at.desc()).all()
+    return render_template("wall.html", messages=messages)
 
 
 @app.route("/delete/<int:message_id>", methods=["POST"])
-@login_required
-def delete_message(message_id):
-    message = Message.query.get_or_404(message_id)
 
-    if message.sender_id != current_user.id:
-        flash("No puedes borrar este mensaje.")
-        return redirect(url_for("wall"))
-
-    db.session.delete(message)
-    db.session.commit()
-    flash("Mensaje eliminado.")
-    return redirect(url_for("wall"))
-
-
-@app.route("/activities", methods=["GET", "POST"])
-@login_required
-def activities():
-    if request.method == "POST":
-        title = request.form.get("title", "").strip()
-        description = request.form.get("description", "").strip()
-
-        if not title:
-            flash("El nombre de la actividad es obligatorio.")
-            return redirect(url_for("activities"))
-
-        activity = Activity(title=title, description=description)
-        db.session.add(activity)
-        db.session.commit()
-        flash("Actividad creada correctamente.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
-
-    all_activities = Activity.query.order_by(Activity.created_at.desc()).all()
-    return render_template("activities.html", activities=all_activities)
-
-
-@app.route("/activities/<int:activity_id>", methods=["GET"])
-@login_required
-def activity_detail(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
-
-    total_costs = sum(cost.amount for cost in activity.costs)
-    total_sales = sum(sale.amount for sale in activity.sales)
-    balance = total_sales - total_costs
-
-    return render_template(
-        "activity_detail.html",
-        activity=activity,
-        total_costs=total_costs,
-        total_sales=total_sales,
-        balance=balance
-    )
-
-
-@app.route("/activities/<int:activity_id>/add-payer", methods=["POST"])
-@login_required
-def add_payer(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
-    name = request.form.get("name", "").strip()
-
-    if not name:
-        flash("Debes escribir el nombre de la persona.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
-
-    payer = ActivityPayer(name=name, activity_id=activity.id)
-    db.session.add(payer)
-    db.session.commit()
-    flash("Persona agregada.")
-    return redirect(url_for("activity_detail", activity_id=activity.id))
-
-
-@app.route("/activities/<int:activity_id>/add-cost", methods=["POST"])
-@login_required
-def add_cost(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
-    description = request.form.get("description", "").strip()
-    amount_raw = request.form.get("amount", "").strip()
-
-    if not description or not amount_raw:
-        flash("Completa la descripción y el valor del costo.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
-
-    try:
-        amount = float(amount_raw)
-    except ValueError:
-        flash("El valor del costo debe ser numérico.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
-
-    cost = ActivityCost(description=description, amount=amount, activity_id=activity.id)
-    db.session.add(cost)
-    db.session.commit()
-    flash("Costo agregado.")
-    return redirect(url_for("activity_detail", activity_id=activity.id))
-
-
-@app.route("/activities/<int:activity_id>/add-sale", methods=["POST"])
-@login_required
-def add_sale(activity_id):
-    activity = Activity.query.get_or_404(activity_id)
-    description = request.form.get("description", "").strip()
-    amount_raw = request.form.get("amount", "").strip()
-
-    if not description or not amount_raw:
-        flash("Completa la descripción y el valor de la venta.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
-
-    try:
-        amount = float(amount_raw)
-    except ValueError:
-        flash("El valor de la venta debe ser numérico.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
-
-    sale = ActivitySale(description=description, amount=amount, activity_id=activity.id)
-    db.session.add(sale)
-    db.session.commit()
-    flash("Venta agregada.")
-    return redirect(url_for("activity_detail", activity_id=activity.id))
-
-
-with app.app_context():
-    db.create_all()
-
-if __name__ == "__main__":
-    app.run(debug=True)
