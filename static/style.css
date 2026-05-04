@@ -94,7 +94,9 @@ textarea {
 .hero-grid,
 .wall-grid,
 .activity-grid,
-.stats-grid {
+.stats-grid,
+.dashboard-grid,
+.admin-detail-grid {
   display: grid;
   gap: 28px;
 }
@@ -111,14 +113,26 @@ textarea {
 }
 
 .activity-grid {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
   margin-top: 28px;
 }
 
 .stats-grid {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 24px;
+}
+
+.dashboard-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  margin-top: 28px;
+}
+
+.admin-detail-grid {
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  align-items: start;
+  margin-top: 28px;
 }
 
 .hero-copy h1,
@@ -416,13 +430,52 @@ textarea {
   min-height: 120px;
 }
 
+/* Dashboard */
+.chart-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+}
+
+.doughnut-wrap {
+  height: 320px;
+}
+
+.chart-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+}
+
+.admin-sessions-card .simple-list {
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 @media (max-width: 1000px) {
   .activity-grid {
     grid-template-columns: 1fr;
   }
 
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid,
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrap,
+  .doughnut-wrap {
+    height: 280px;
   }
 }
 
@@ -458,5 +511,19 @@ textarea {
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .chart-wrap,
+  .doughnut-wrap {
+    height: 240px;
+  }
+
+  .page-title,
+  .section-heading h2 {
+    font-size: clamp(1.8rem, 8vw, 2.6rem);
+  }
+
+  .section-title {
+    font-size: 1.4rem;
   }
 }
