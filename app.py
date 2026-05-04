@@ -12,7 +12,7 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
 database_url = os.getenv("DATABASE_URL")
 if not database_url:
-    raise ValueError("❌ ERROR: DATABASE_URL no está configurada")
+    raise ValueError("ERROR: DATABASE_URL no está configurada")
 
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -96,9 +96,24 @@ class Activity(db.Model):
     description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    payers = db.relationship("ActivityPayer", backref="activity", lazy=True, cascade="all, delete-orphan")
-    costs = db.relationship("ActivityCost", backref="activity", lazy=True, cascade="all, delete-orphan")
-    sales = db.relationship("ActivitySale", backref="activity", lazy=True, cascade="all, delete-orphan")
+    payers = db.relationship(
+        "ActivityPayer",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+    costs = db.relationship(
+        "ActivityCost",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+    sales = db.relationship(
+        "ActivitySale",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
 
 
 class ActivityPayer(db.Model):
@@ -240,7 +255,7 @@ def wall():
     messages = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
         ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.created_at.desc(), Message.id.asc()).all()
+    ).order_by(Message.created_at.desc()).all()
 
     return render_template("wall.html", messages=messages, partner=partner)
 
@@ -366,6 +381,7 @@ def add_sale(activity_id):
 
 with app.app_context():
     db.create_all()
+
 
 if __name__ == "__main__":
     app.run(debug=True)
