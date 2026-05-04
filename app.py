@@ -10,14 +10,15 @@ app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
-database_url = os.getenv("DATABASE_URL")
-if not database_url:
-    raise ValueError("ERROR: DATABASE_URL no está configurada")
-
+database_url = os.getenv("DATABASE_URL", "").strip()
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+if not database_url:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -28,6 +29,8 @@ login_manager.init_app(app)
 
 COLOMBIA_TZ = ZoneInfo("America/Bogota")
 UTC_TZ = ZoneInfo("UTC")
+
+ADMIN_USERNAME = "Diegoho58-dev"
 
 
 @app.template_filter("colombia_time")
@@ -52,6 +55,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     messages = db.relationship(
         "Message",
@@ -96,24 +100,9 @@ class Activity(db.Model):
     description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    payers = db.relationship(
-        "ActivityPayer",
-        backref="activity",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
-    costs = db.relationship(
-        "ActivityCost",
-        backref="activity",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
-    sales = db.relationship(
-        "ActivitySale",
-        backref="activity",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
+    payers = db.relationship("ActivityPayer", backref="activity", lazy=True, cascade="all, delete-orphan")
+    costs = db.relationship("ActivityCost", backref="activity", lazy=True, cascade="all, delete-orphan")
+    sales = db.relationship("ActivitySale", backref="activity", lazy=True, cascade="all, delete-orphan")
 
 
 class ActivityPayer(db.Model):
@@ -144,15 +133,39 @@ class ActivitySale(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 
 def get_chat_partner():
+    if not current_user.is_authenticated:
+        return None
     if current_user.id == 2:
-        return User.query.get(3)
-    elif current_user.id == 3:
-        return User.query.get(2)
+        return db.session.get(User, 3)
+    if current_user.id == 3:
+        return db.session.get(User, 2)
     return None
+
+
+def ensure_admin_column():
+    try:
+        with db.engine.connect() as connection:
+            connection.exec_driver_sql(
+                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE"
+            )
+            connection.commit()
+    except Exception as e:
+        print("ERROR ALTER USER:", e)
+
+
+def ensure_admin_user():
+    try:
+        admin_user = User.query.filter_by(username=ADMIN_USERNAME).first()
+        if admin_user and not admin_user.is_admin:
+            admin_user.is_admin = True
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR ENSURE ADMIN:", e)
 
 
 @app.route("/")
@@ -160,9 +173,8 @@ def home():
     try:
         latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
     except Exception as e:
-        print("ERROR BD:", e)
+        print("ERROR BD HOME:", e)
         latest_messages = []
-
     return render_template("home.html", latest_messages=latest_messages)
 
 
@@ -184,18 +196,30 @@ def register():
             flash("Completa todos los campos.")
             return redirect(url_for("register"))
 
-        if User.query.filter_by(username=username).first():
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
             flash("Ese usuario ya existe.")
             return redirect(url_for("register"))
 
-        hashed_password = generate_password_hash(password)
-        new_user = User(username=username, password_hash=hashed_password)
+        try:
+            hashed_password = generate_password_hash(password)
+            is_admin = username == ADMIN_USERNAME
 
-        db.session.add(new_user)
-        db.session.commit()
+            new_user = User(
+                username=username,
+                password_hash=hashed_password,
+                is_admin=is_admin
+            )
+            db.session.add(new_user)
+            db.session.commit()
 
-        login_user(new_user)
-        return redirect(url_for("wall"))
+            login_user(new_user)
+            return redirect(url_for("wall"))
+        except Exception as e:
+            db.session.rollback()
+            print("ERROR REGISTER:", e)
+            flash("No se pudo crear la cuenta.")
+            return redirect(url_for("register"))
 
     return render_template("register.html")
 
@@ -209,9 +233,18 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
 
-        user = User.query.filter_by(username=username).first()
+        try:
+            user = User.query.filter_by(username=username).first()
+        except Exception as e:
+            print("ERROR LOGIN QUERY:", e)
+            flash("Error consultando usuarios.")
+            return redirect(url_for("login"))
 
         if user and check_password_hash(user.password_hash, password):
+            if user.username == ADMIN_USERNAME and not user.is_admin:
+                user.is_admin = True
+                db.session.commit()
+
             login_user(user)
             return redirect(url_for("wall"))
 
@@ -241,21 +274,30 @@ def wall():
         content = request.form.get("content", "").strip()
 
         if content:
-            message = Message(
-                content=content,
-                user_id=current_user.id,
-                sender_id=current_user.id,
-                receiver_id=partner.id
-            )
-            db.session.add(message)
-            db.session.commit()
+            try:
+                message = Message(
+                    content=content,
+                    user_id=current_user.id,
+                    sender_id=current_user.id,
+                    receiver_id=partner.id
+                )
+                db.session.add(message)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print("ERROR NEW MESSAGE:", e)
+                flash("No se pudo guardar el mensaje.")
 
         return redirect(url_for("wall"))
 
-    messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
-        ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.created_at.desc()).all()
+    try:
+        messages = Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
+            ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
+        ).order_by(Message.created_at.desc()).all()
+    except Exception as e:
+        print("ERROR WALL QUERY:", e)
+        messages = []
 
     return render_template("wall.html", messages=messages, partner=partner)
 
@@ -269,9 +311,15 @@ def delete_message(message_id):
         flash("No puedes borrar este mensaje.")
         return redirect(url_for("wall"))
 
-    db.session.delete(message)
-    db.session.commit()
-    flash("Mensaje eliminado.")
+    try:
+        db.session.delete(message)
+        db.session.commit()
+        flash("Mensaje eliminado.")
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR DELETE MESSAGE:", e)
+        flash("No se pudo eliminar el mensaje.")
+
     return redirect(url_for("wall"))
 
 
@@ -286,13 +334,24 @@ def activities():
             flash("El nombre de la actividad es obligatorio.")
             return redirect(url_for("activities"))
 
-        activity = Activity(title=title, description=description)
-        db.session.add(activity)
-        db.session.commit()
-        flash("Actividad creada correctamente.")
-        return redirect(url_for("activity_detail", activity_id=activity.id))
+        try:
+            activity = Activity(title=title, description=description)
+            db.session.add(activity)
+            db.session.commit()
+            flash("Actividad creada correctamente.")
+            return redirect(url_for("activity_detail", activity_id=activity.id))
+        except Exception as e:
+            db.session.rollback()
+            print("ERROR CREATE ACTIVITY:", e)
+            flash("No se pudo crear la actividad.")
+            return redirect(url_for("activities"))
 
-    all_activities = Activity.query.order_by(Activity.created_at.desc()).all()
+    try:
+        all_activities = Activity.query.order_by(Activity.created_at.desc()).all()
+    except Exception as e:
+        print("ERROR ACTIVITIES QUERY:", e)
+        all_activities = []
+
     return render_template("activities.html", activities=all_activities)
 
 
@@ -324,10 +383,16 @@ def add_payer(activity_id):
         flash("Debes escribir el nombre de la persona.")
         return redirect(url_for("activity_detail", activity_id=activity.id))
 
-    payer = ActivityPayer(name=name, activity_id=activity.id)
-    db.session.add(payer)
-    db.session.commit()
-    flash("Persona agregada.")
+    try:
+        payer = ActivityPayer(name=name, activity_id=activity.id)
+        db.session.add(payer)
+        db.session.commit()
+        flash("Persona agregada.")
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR ADD PAYER:", e)
+        flash("No se pudo agregar la persona.")
+
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
 
@@ -348,10 +413,16 @@ def add_cost(activity_id):
         flash("El valor del costo debe ser numérico.")
         return redirect(url_for("activity_detail", activity_id=activity.id))
 
-    cost = ActivityCost(description=description, amount=amount, activity_id=activity.id)
-    db.session.add(cost)
-    db.session.commit()
-    flash("Costo agregado.")
+    try:
+        cost = ActivityCost(description=description, amount=amount, activity_id=activity.id)
+        db.session.add(cost)
+        db.session.commit()
+        flash("Costo agregado.")
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR ADD COST:", e)
+        flash("No se pudo agregar el costo.")
+
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
 
@@ -372,15 +443,52 @@ def add_sale(activity_id):
         flash("El valor de la venta debe ser numérico.")
         return redirect(url_for("activity_detail", activity_id=activity.id))
 
-    sale = ActivitySale(description=description, amount=amount, activity_id=activity.id)
-    db.session.add(sale)
-    db.session.commit()
-    flash("Venta agregada.")
+    try:
+        sale = ActivitySale(description=description, amount=amount, activity_id=activity.id)
+        db.session.add(sale)
+        db.session.commit()
+        flash("Venta agregada.")
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR ADD SALE:", e)
+        flash("No se pudo agregar la venta.")
+
     return redirect(url_for("activity_detail", activity_id=activity.id))
+
+
+@app.route("/admin")
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        flash("No tienes permisos para entrar al panel administrador.")
+        return redirect(url_for("home"))
+
+    users = User.query.order_by(User.id.asc()).all()
+    total_users = User.query.count()
+    total_messages = Message.query.count()
+    total_activities = Activity.query.count()
+
+    admin_data = {
+        "nombre": "Diego Armando Gomez Dorado",
+        "usuario": current_user.username,
+        "rol": "Administrador",
+        "ubicacion": "Popayán, Cauca, Colombia"
+    }
+
+    return render_template(
+        "admin.html",
+        users=users,
+        total_users=total_users,
+        total_messages=total_messages,
+        total_activities=total_activities,
+        admin_data=admin_data
+    )
 
 
 with app.app_context():
     db.create_all()
+    ensure_admin_column()
+    ensure_admin_user()
 
 
 if __name__ == "__main__":
