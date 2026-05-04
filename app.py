@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from sqlalchemy import func
+import json
 import os
 
 app = Flask(__name__)
@@ -28,6 +30,11 @@ login_manager.init_app(app)
 
 COLOMBIA_TZ = ZoneInfo("America/Bogota")
 UTC_TZ = ZoneInfo("UTC")
+
+# IMPORTANTE:
+# Aquí debes poner el ID real de TU usuario en la base de datos.
+# Ejemplo: si tu usuario Diego tiene id 2, entonces dejas 2.
+ADMIN_USER_ID = 2
 
 
 @app.template_filter("colombia_time")
@@ -75,6 +82,24 @@ class User(UserMixin, db.Model):
         backref="receiver",
         lazy=True
     )
+
+    sessions = db.relationship(
+        "UserSession",
+        backref="user",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+
+class UserSession(db.Model):
+    __tablename__ = "user_session"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    login_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    logout_at = db.Column(db.DateTime, nullable=True)
+    duration_seconds = db.Column(db.Integer, nullable=True)
+    ip_address = db.Column(db.String(80), nullable=True)
 
 
 class Message(db.Model):
@@ -149,19 +174,46 @@ def ensure_admin_column():
             )
             connection.commit()
     except Exception as e:
-        print("ERROR AGREGANDO COLUMNA is_admin:", e)
+        print("ERROR AGREGANDO is_admin:", e)
 
 
-def assign_admin_to_existing_diego():
+def assign_admin_by_id():
     try:
-        diego_user = User.query.filter_by(username="Diego").first()
-        if diego_user and not diego_user.is_admin:
-            diego_user.is_admin = True
+        admin_user = User.query.get(ADMIN_USER_ID)
+        if admin_user and not admin_user.is_admin:
+            admin_user.is_admin = True
             db.session.commit()
-            print("Usuario Diego marcado como administrador.")
+            print(f"Usuario ID {ADMIN_USER_ID} marcado como administrador.")
     except Exception as e:
         db.session.rollback()
-        print("ERROR ASIGNANDO ADMIN A DIEGO:", e)
+        print("ERROR ASIGNANDO ADMIN POR ID:", e)
+
+
+def start_user_session(user):
+    new_session = UserSession(
+        user_id=user.id,
+        login_at=datetime.utcnow(),
+        ip_address=request.headers.get("X-Forwarded-For", request.remote_addr)
+    )
+    db.session.add(new_session)
+    db.session.commit()
+    session["active_session_id"] = new_session.id
+
+
+def end_user_session():
+    active_session_id = session.get("active_session_id")
+    if not active_session_id:
+        return
+
+    current_session = UserSession.query.get(active_session_id)
+    if current_session and current_session.logout_at is None:
+        current_session.logout_at = datetime.utcnow()
+        current_session.duration_seconds = int(
+            (current_session.logout_at - current_session.login_at).total_seconds()
+        )
+        db.session.commit()
+
+    session.pop("active_session_id", None)
 
 
 @app.route("/")
@@ -204,6 +256,7 @@ def register():
         db.session.commit()
 
         login_user(new_user)
+        start_user_session(new_user)
         return redirect(url_for("wall"))
 
     return render_template("register.html")
@@ -222,6 +275,7 @@ def login():
 
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
+            start_user_session(user)
             return redirect(url_for("wall"))
 
         flash("Usuario o contraseña incorrectos.")
@@ -233,6 +287,7 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
+    end_user_session()
     logout_user()
     return redirect(url_for("home"))
 
@@ -391,7 +446,7 @@ def add_sale(activity_id):
 @app.route("/admin")
 @login_required
 def admin_dashboard():
-    if not current_user.is_admin:
+    if not getattr(current_user, "is_admin", False):
         flash("No tienes permisos para entrar al panel administrador.")
         return redirect(url_for("home"))
 
@@ -399,28 +454,86 @@ def admin_dashboard():
     total_users = User.query.count()
     total_messages = Message.query.count()
     total_activities = Activity.query.count()
+    total_sessions = UserSession.query.count()
 
-    admin_data = {
-        "nombre": "Diego Armando Gomez Dorado",
-        "usuario": current_user.username,
-        "rol": "Administrador",
-        "id_usuario": current_user.id
+    completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
+    total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
+    avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
+    active_sessions = UserSession.query.filter(UserSession.logout_at.is_(None)).count()
+
+    now = datetime.utcnow()
+    start_range = now - timedelta(days=6)
+    sessions_last_7 = UserSession.query.filter(UserSession.login_at >= start_range).all()
+
+    sessions_by_day = {}
+    minutes_by_day = {}
+
+    for i in range(7):
+        day = (start_range + timedelta(days=i)).date()
+        key = day.strftime("%d/%m")
+        sessions_by_day[key] = 0
+        minutes_by_day[key] = 0
+
+    for s in sessions_last_7:
+        day_key = s.login_at.date().strftime("%d/%m")
+        if day_key in sessions_by_day:
+            sessions_by_day[day_key] += 1
+            if s.duration_seconds:
+                minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
+
+    user_labels = []
+    user_session_counts = []
+    for user in users:
+        user_labels.append(user.username)
+        user_session_counts.append(len(user.sessions))
+
+    dashboard = {
+        "kpis": {
+            "total_users": total_users,
+            "total_messages": total_messages,
+            "total_activities": total_activities,
+            "total_sessions": total_sessions,
+            "active_sessions": active_sessions,
+            "total_connection_hours": round(total_connection_seconds / 3600, 2),
+            "avg_connection_minutes": round(avg_connection_seconds / 60, 2)
+        },
+        "charts": {
+            "sessions_by_day": {
+                "labels": list(sessions_by_day.keys()),
+                "values": list(sessions_by_day.values())
+            },
+            "minutes_by_day": {
+                "labels": list(minutes_by_day.keys()),
+                "values": list(minutes_by_day.values())
+            },
+            "sessions_by_user": {
+                "labels": user_labels,
+                "values": user_session_counts
+            }
+        },
+        "admin_data": {
+            "nombre": "Diego Armando Hoyos Dorado",
+            "usuario": current_user.username,
+            "rol": "Administrador",
+            "id_usuario": current_user.id
+        }
     }
+
+    latest_sessions = UserSession.query.order_by(UserSession.login_at.desc()).limit(10).all()
 
     return render_template(
         "admin.html",
         users=users,
-        total_users=total_users,
-        total_messages=total_messages,
-        total_activities=total_activities,
-        admin_data=admin_data
+        latest_sessions=latest_sessions,
+        dashboard=dashboard,
+        dashboard_json=json.dumps(dashboard)
     )
 
 
 with app.app_context():
     db.create_all()
     ensure_admin_column()
-    assign_admin_to_existing_diego()
+    assign_admin_by_id()
 
 
 if __name__ == "__main__":
