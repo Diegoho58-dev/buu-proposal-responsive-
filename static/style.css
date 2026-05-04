@@ -475,3 +475,50 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+.dashboard-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.admin-detail-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.chart-card canvas {
+  width: 100% !important;
+  height: 320px !important;
+  margin-top: 14px;
+}
+
+.dashboard-kpis .stat-card span {
+  color: var(--muted);
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.dashboard-kpis .stat-card strong {
+  font-size: 2rem;
+  font-family: "Instrument Serif", serif;
+  line-height: 1;
+}
+
+.footer-name {
+  font-weight: 700;
+}
+
+.footer-rights {
+  color: var(--muted);
+}
+
+@media (max-width: 1000px) {
+  .dashboard-grid,
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+
+
