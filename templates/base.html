@@ -24,7 +24,7 @@
           <a href="{{ url_for('activities') }}">Actividades</a>
 
           {% if current_user.is_admin %}
-            <a href="{{ url_for('admin_dashboard') }}">Administrador</a>
+            <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
           {% endif %}
 
           <span class="user-pill">Hola, {{ current_user.username }}</span>
@@ -54,7 +54,7 @@
   <footer class="site-footer">
     <div class="container footer-content">
       <div class="footer-left">
-        <p class="footer-name">Diego Armando Gomez Dorado</p>
+        <p class="footer-name">Diego Armando Hoyos Dorado</p>
         <p class="footer-rights">© 2026 Todos los derechos reservados.</p>
       </div>
     </div>
