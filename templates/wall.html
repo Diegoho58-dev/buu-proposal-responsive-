@@ -8,7 +8,7 @@
     <aside class="wa-sidebar">
       <div class="wa-sidebar-header">
         <div>
-          <h1>WhatsApp</h1>
+          <h1>Mensajes</h1>
         </div>
 
         <div class="wa-sidebar-icons">
@@ -36,7 +36,7 @@
             <div class="wa-chat-topline">
               <h3>Jenymantilla</h3>
               {% if messages %}
-                <span>{{ messages[0].created_at | colombia_time | datetime_format("%H:%M") }}</span>
+                <span>{{ (messages|last).created_at | colombia_time | datetime_format("%H:%M") }}</span>
               {% else %}
                 <span>Ahora</span>
               {% endif %}
@@ -44,10 +44,11 @@
 
             <p>
               {% if messages %}
-                {% if messages[0].sender_id == current_user.id %}
-                  Tú: {{ messages[0].content[:40] }}{% if messages[0].content|length > 40 %}...{% endif %}
+                {% set last_message = messages|last %}
+                {% if last_message.sender_id == current_user.id %}
+                  Tú: {{ last_message.content[:40] }}{% if last_message.content|length > 40 %}...{% endif %}
                 {% else %}
-                  {{ messages[0].content[:46] }}{% if messages[0].content|length > 46 %}...{% endif %}
+                  {{ last_message.content[:46] }}{% if last_message.content|length > 46 %}...{% endif %}
                 {% endif %}
               {% else %}
                 Empieza la conversación
@@ -66,7 +67,7 @@
           <div class="wa-chat-avatar large">J</div>
           <div>
             <h2>Jenymantilla</h2>
-            <p>en línea recientemente</p>
+            <p>Chat principal</p>
           </div>
         </div>
 
@@ -77,13 +78,18 @@
         </div>
       </header>
 
-      <div class="wa-messages">
-        <div class="wa-day-separator">
-          <span>Hoy</span>
-        </div>
-
+      <div class="wa-messages" id="waMessages">
         {% if messages %}
-          {% for message in messages|reverse %}
+          {% set day = namespace(value='') %}
+          {% for message in messages %}
+            {% set current_day = message.created_at | colombia_time | datetime_format("%d/%m/%Y") %}
+            {% if current_day != day.value %}
+              <div class="wa-day-separator">
+                <span>{{ current_day }}</span>
+              </div>
+              {% set day.value = current_day %}
+            {% endif %}
+
             <article class="wa-message {% if message.sender_id == current_user.id %}out{% else %}in{% endif %}">
               <div class="wa-bubble">
                 <p>{{ message.content }}</p>
