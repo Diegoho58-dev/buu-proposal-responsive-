@@ -1,73 +1,166 @@
 {% extends "base.html" %}
-{% block title %}Administrador | Jenny & Diego{% endblock %}
+{% block title %}Dashboard | Jenny & Diego{% endblock %}
 
 {% block content %}
 <section class="section">
   <div class="container">
     <div class="section-heading">
       <p class="eyebrow">Panel interno</p>
-      <h1 class="page-title">Administrador</h1>
-      <p class="hero-text">Este panel pertenece al usuario Diego registrado actualmente en la base de datos.</p>
+      <h1 class="page-title">Dashboard administrativo</h1>
+      <p class="hero-text">Métricas generales, sesiones, conexiones y tiempo de uso.</p>
     </div>
 
-    <div class="stats-grid">
+    <div class="stats-grid dashboard-kpis">
       <article class="stat-card">
         <span>Usuarios</span>
-        <strong>{{ total_users }}</strong>
+        <strong>{{ dashboard.kpis.total_users }}</strong>
       </article>
       <article class="stat-card">
         <span>Mensajes</span>
-        <strong>{{ total_messages }}</strong>
+        <strong>{{ dashboard.kpis.total_messages }}</strong>
       </article>
       <article class="stat-card">
         <span>Actividades</span>
-        <strong>{{ total_activities }}</strong>
+        <strong>{{ dashboard.kpis.total_activities }}</strong>
       </article>
       <article class="stat-card">
-        <span>Rol</span>
-        <strong>{{ admin_data.rol }}</strong>
+        <span>Conexiones</span>
+        <strong>{{ dashboard.kpis.total_sessions }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Sesiones activas</span>
+        <strong>{{ dashboard.kpis.active_sessions }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Horas conectadas</span>
+        <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Promedio por sesión</span>
+        <strong>{{ dashboard.kpis.avg_connection_minutes }} min</strong>
+      </article>
+      <article class="stat-card">
+        <span>Admin actual</span>
+        <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
 
-    <div class="activity-grid">
+    <div class="activity-grid dashboard-grid">
+      <article class="form-card chart-card">
+        <p class="eyebrow">Conexiones</p>
+        <h2 class="section-title">Sesiones por día</h2>
+        <canvas id="sessionsByDayChart"></canvas>
+      </article>
+
+      <article class="form-card chart-card">
+        <p class="eyebrow">Tiempo</p>
+        <h2 class="section-title">Minutos conectados por día</h2>
+        <canvas id="minutesByDayChart"></canvas>
+      </article>
+
+      <article class="form-card chart-card">
+        <p class="eyebrow">Usuarios</p>
+        <h2 class="section-title">Sesiones por usuario</h2>
+        <canvas id="sessionsByUserChart"></canvas>
+      </article>
+    </div>
+
+    <div class="activity-grid admin-detail-grid" style="margin-top: 28px;">
       <article class="form-card">
-        <p class="eyebrow">Mis datos</p>
-        <h2 class="section-title">Información del administrador</h2>
+        <p class="eyebrow">Administrador</p>
+        <h2 class="section-title">Mis datos</h2>
 
         <div class="simple-list">
-          <div class="simple-item"><strong>Nombre:</strong> {{ admin_data.nombre }}</div>
-          <div class="simple-item"><strong>Usuario:</strong> {{ admin_data.usuario }}</div>
-          <div class="simple-item"><strong>ID:</strong> {{ admin_data.id_usuario }}</div>
-          <div class="simple-item"><strong>Rol:</strong> {{ admin_data.rol }}</div>
+          <div class="simple-item"><strong>Nombre:</strong> {{ dashboard.admin_data.nombre }}</div>
+          <div class="simple-item"><strong>Usuario:</strong> {{ dashboard.admin_data.usuario }}</div>
+          <div class="simple-item"><strong>ID:</strong> {{ dashboard.admin_data.id_usuario }}</div>
+          <div class="simple-item"><strong>Rol:</strong> {{ dashboard.admin_data.rol }}</div>
         </div>
       </article>
 
       <article class="form-card">
-        <p class="eyebrow">Usuarios</p>
-        <h2 class="section-title">Cuentas registradas</h2>
+        <p class="eyebrow">Sesiones recientes</p>
+        <h2 class="section-title">Últimas conexiones</h2>
 
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Usuario</th>
-                <th>Administrador</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for user in users %}
-                <tr>
-                  <td>{{ user.id }}</td>
-                  <td>{{ user.username }}</td>
-                  <td>{{ "Sí" if user.is_admin else "No" }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div class="simple-list">
+          {% for s in latest_sessions %}
+            <div class="simple-item">
+              <strong>{{ s.user.username }}</strong><br>
+              Entrada: {{ s.login_at | colombia_time | datetime_format }}<br>
+              Salida:
+              {% if s.logout_at %}
+                {{ s.logout_at | colombia_time | datetime_format }}
+              {% else %}
+                En curso
+              {% endif %}<br>
+              Duración:
+              {% if s.duration_seconds %}
+                {{ (s.duration_seconds / 60) | round(1) }} min
+              {% else %}
+                En curso
+              {% endif %}
+            </div>
+          {% endfor %}
         </div>
       </article>
     </div>
   </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const dashboard = {{ dashboard_json | safe }};
+
+  new Chart(document.getElementById("sessionsByDayChart"), {
+    type: "bar",
+    data: {
+      labels: dashboard.charts.sessions_by_day.labels,
+      datasets: [{
+        label: "Sesiones",
+        data: dashboard.charts.sessions_by_day.values,
+        backgroundColor: "#c7517d",
+        borderRadius: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+
+  new Chart(document.getElementById("minutesByDayChart"), {
+    type: "line",
+    data: {
+      labels: dashboard.charts.minutes_by_day.labels,
+      datasets: [{
+        label: "Minutos conectados",
+        data: dashboard.charts.minutes_by_day.values,
+        borderColor: "#a63f66",
+        backgroundColor: "rgba(199, 81, 125, 0.15)",
+        fill: true,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+
+  new Chart(document.getElementById("sessionsByUserChart"), {
+    type: "doughnut",
+    data: {
+      labels: dashboard.charts.sessions_by_user.labels,
+      datasets: [{
+        label: "Sesiones por usuario",
+        data: dashboard.charts.sessions_by_user.values,
+        backgroundColor: ["#c7517d", "#7f8cff", "#f0b36d", "#89c9a5", "#d984b6", "#8f7ae5"]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+</script>
 {% endblock %}
