@@ -15,70 +15,98 @@
         <span>Usuarios</span>
         <strong>{{ dashboard.kpis.total_users }}</strong>
       </article>
+
       <article class="stat-card">
         <span>Mensajes</span>
         <strong>{{ dashboard.kpis.total_messages }}</strong>
       </article>
+
       <article class="stat-card">
         <span>Actividades</span>
         <strong>{{ dashboard.kpis.total_activities }}</strong>
       </article>
+
       <article class="stat-card">
         <span>Conexiones</span>
         <strong>{{ dashboard.kpis.total_sessions }}</strong>
       </article>
+
       <article class="stat-card">
         <span>Sesiones activas</span>
         <strong>{{ dashboard.kpis.active_sessions }}</strong>
       </article>
+
       <article class="stat-card">
         <span>Horas conectadas</span>
         <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
       </article>
+
       <article class="stat-card">
         <span>Promedio por sesión</span>
         <strong>{{ dashboard.kpis.avg_connection_minutes }} min</strong>
       </article>
+
       <article class="stat-card">
         <span>Admin actual</span>
         <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
 
-    <div class="activity-grid dashboard-grid">
+    <div class="dashboard-grid">
       <article class="form-card chart-card">
         <p class="eyebrow">Conexiones</p>
         <h2 class="section-title">Sesiones por día</h2>
-        <canvas id="sessionsByDayChart"></canvas>
+        <div class="chart-wrap">
+          <canvas id="sessionsByDayChart"></canvas>
+        </div>
       </article>
 
       <article class="form-card chart-card">
         <p class="eyebrow">Tiempo</p>
         <h2 class="section-title">Minutos conectados por día</h2>
-        <canvas id="minutesByDayChart"></canvas>
+        <div class="chart-wrap">
+          <canvas id="minutesByDayChart"></canvas>
+        </div>
       </article>
 
       <article class="form-card chart-card">
         <p class="eyebrow">Usuarios</p>
         <h2 class="section-title">Sesiones por usuario</h2>
-        <canvas id="sessionsByUserChart"></canvas>
+        <div class="chart-wrap doughnut-wrap">
+          <canvas id="sessionsByUserChart"></canvas>
+        </div>
       </article>
     </div>
 
-    <div class="activity-grid admin-detail-grid" style="margin-top: 28px;">
+    <div class="admin-detail-grid">
       <article class="form-card">
         <p class="eyebrow">Administrador</p>
         <h2 class="section-title">Mis datos</h2>
 
         <div class="simple-list">
-          <div class="simple-item"><strong>Nombre:</strong> {{ dashboard.admin_data.nombre }}</div>
-          <div class="simple-item"><strong>Usuario:</strong> {{ dashboard.admin_data.usuario }}</div>
-          <div class="simple-item"><strong>ID:</strong> {{ dashboard.admin_data.id_usuario }}</div>
-          <div class="simple-item"><strong>Rol:</strong> {{ dashboard.admin_data.rol }}</div>
+          <div class="simple-item">
+            <strong>Nombre</strong><br>
+            {{ dashboard.admin_data.nombre }}
+          </div>
+
+          <div class="simple-item">
+            <strong>Usuario</strong><br>
+            {{ dashboard.admin_data.usuario }}
+          </div>
+
+          <div class="simple-item">
+            <strong>ID</strong><br>
+            {{ dashboard.admin_data.id_usuario }}
+          </div>
+
+          <div class="simple-item">
+            <strong>Rol</strong><br>
+            {{ dashboard.admin_data.rol }}
+          </div>
         </div>
       </article>
 
-      <article class="form-card">
+      <article class="form-card admin-sessions-card">
         <p class="eyebrow">Sesiones recientes</p>
         <h2 class="section-title">Últimas conexiones</h2>
 
@@ -92,7 +120,8 @@
                 {{ s.logout_at | colombia_time | datetime_format }}
               {% else %}
                 En curso
-              {% endif %}<br>
+              {% endif %}
+              <br>
               Duración:
               {% if s.duration_seconds %}
                 {{ (s.duration_seconds / 60) | round(1) }} min
@@ -100,6 +129,8 @@
                 En curso
               {% endif %}
             </div>
+          {% else %}
+            <div class="simple-item empty">No hay sesiones recientes.</div>
           {% endfor %}
         </div>
       </article>
@@ -111,6 +142,29 @@
 <script>
   const dashboard = {{ dashboard_json | safe }};
 
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: "#7a6670",
+          font: {
+            family: "Inter",
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: "#2a1f23",
+        titleColor: "#ffffff",
+        bodyColor: "#ffffff",
+        padding: 12,
+        cornerRadius: 12
+      }
+    }
+  };
+
   new Chart(document.getElementById("sessionsByDayChart"), {
     type: "bar",
     data: {
@@ -119,12 +173,28 @@
         label: "Sesiones",
         data: dashboard.charts.sessions_by_day.values,
         backgroundColor: "#c7517d",
-        borderRadius: 10
+        borderRadius: 10,
+        borderSkipped: false
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false
+      ...commonOptions,
+      scales: {
+        x: {
+          ticks: { color: "#7a6670" },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: "#7a6670",
+            precision: 0
+          },
+          grid: {
+            color: "rgba(42, 31, 35, 0.08)"
+          }
+        }
+      }
     }
   });
 
@@ -138,12 +208,26 @@
         borderColor: "#a63f66",
         backgroundColor: "rgba(199, 81, 125, 0.15)",
         fill: true,
-        tension: 0.35
+        tension: 0.35,
+        pointRadius: 4,
+        pointHoverRadius: 6
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false
+      ...commonOptions,
+      scales: {
+        x: {
+          ticks: { color: "#7a6670" },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: "#7a6670" },
+          grid: {
+            color: "rgba(42, 31, 35, 0.08)"
+          }
+        }
+      }
     }
   });
 
@@ -154,12 +238,20 @@
       datasets: [{
         label: "Sesiones por usuario",
         data: dashboard.charts.sessions_by_user.values,
-        backgroundColor: ["#c7517d", "#7f8cff", "#f0b36d", "#89c9a5", "#d984b6", "#8f7ae5"]
+        backgroundColor: [
+          "#c7517d",
+          "#7f8cff",
+          "#f0b36d",
+          "#89c9a5",
+          "#d984b6",
+          "#8f7ae5"
+        ],
+        borderWidth: 0
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false
+      ...commonOptions,
+      cutout: "62%"
     }
   });
 </script>
