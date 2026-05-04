@@ -60,4 +60,107 @@
 
       <article class="form-card chart-card">
         <p class="eyebrow">Usuarios</p>
-        <h2 class="section-title">Sesiones por
+        <h2 class="section-title">Sesiones por usuario</h2>
+        <canvas id="sessionsByUserChart"></canvas>
+      </article>
+    </div>
+
+    <div class="activity-grid admin-detail-grid" style="margin-top: 28px;">
+      <article class="form-card">
+        <p class="eyebrow">Administrador</p>
+        <h2 class="section-title">Mis datos</h2>
+
+        <div class="simple-list">
+          <div class="simple-item"><strong>Nombre:</strong> {{ dashboard.admin_data.nombre }}</div>
+          <div class="simple-item"><strong>Usuario:</strong> {{ dashboard.admin_data.usuario }}</div>
+          <div class="simple-item"><strong>ID:</strong> {{ dashboard.admin_data.id_usuario }}</div>
+          <div class="simple-item"><strong>Rol:</strong> {{ dashboard.admin_data.rol }}</div>
+        </div>
+      </article>
+
+      <article class="form-card">
+        <p class="eyebrow">Sesiones recientes</p>
+        <h2 class="section-title">Últimas conexiones</h2>
+
+        <div class="simple-list">
+          {% for s in latest_sessions %}
+            <div class="simple-item">
+              <strong>{{ s.user.username }}</strong><br>
+              Entrada: {{ s.login_at | colombia_time | datetime_format }}<br>
+              Salida:
+              {% if s.logout_at %}
+                {{ s.logout_at | colombia_time | datetime_format }}
+              {% else %}
+                En curso
+              {% endif %}<br>
+              Duración:
+              {% if s.duration_seconds %}
+                {{ (s.duration_seconds / 60) | round(1) }} min
+              {% else %}
+                En curso
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const dashboard = {{ dashboard_json | safe }};
+
+  new Chart(document.getElementById("sessionsByDayChart"), {
+    type: "bar",
+    data: {
+      labels: dashboard.charts.sessions_by_day.labels,
+      datasets: [{
+        label: "Sesiones",
+        data: dashboard.charts.sessions_by_day.values,
+        backgroundColor: "#c7517d",
+        borderRadius: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+
+  new Chart(document.getElementById("minutesByDayChart"), {
+    type: "line",
+    data: {
+      labels: dashboard.charts.minutes_by_day.labels,
+      datasets: [{
+        label: "Minutos conectados",
+        data: dashboard.charts.minutes_by_day.values,
+        borderColor: "#a63f66",
+        backgroundColor: "rgba(199, 81, 125, 0.15)",
+        fill: true,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+
+  new Chart(document.getElementById("sessionsByUserChart"), {
+    type: "doughnut",
+    data: {
+      labels: dashboard.charts.sessions_by_user.labels,
+      datasets: [{
+        label: "Sesiones por usuario",
+        data: dashboard.charts.sessions_by_user.values,
+        backgroundColor: ["#c7517d", "#7f8cff", "#f0b36d", "#89c9a5", "#d984b6", "#8f7ae5"]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+</script>
+{% endblock %}
