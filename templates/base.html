@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Jenny Diego{% endblock %}</title>
+  <title>{% block title %}Jenny & Diego{% endblock %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 <body>
   <header class="site-header">
     <nav class="nav container">
-      <a class="brand" href="{{ url_for('home') }}">Jenny Diego</a>
+      <a class="brand" href="{{ url_for('home') }}">Jenny & Diego</a>
 
       <div class="nav-links">
         <a href="{{ url_for('home') }}">Inicio</a>
@@ -22,11 +22,6 @@
           <a href="{{ url_for('wall') }}">Mensajes</a>
           <a href="{{ url_for('note') }}">Carta</a>
           <a href="{{ url_for('activities') }}">Actividades</a>
-
-          {% if current_user.is_admin %}
-            <a href="{{ url_for('admin_dashboard') }}">Administrador</a>
-          {% endif %}
-
           <span class="user-pill">Hola, {{ current_user.username }}</span>
           <a href="{{ url_for('logout') }}">Salir</a>
         {% else %}
@@ -54,8 +49,8 @@
   <footer class="site-footer">
     <div class="container footer-content">
       <div class="footer-left">
-        <p class="footer-name">Diego Armando Gomez Dorado</p>
-        <p class="footer-muted">2026 · Todos los derechos reservados.</p>
+        <p class="footer-name">Diego A. Hoyos Dorado</p>
+        <p class="footer-rights">© 2026 Todos los derechos reservados.</p>
       </div>
     </div>
   </footer>
