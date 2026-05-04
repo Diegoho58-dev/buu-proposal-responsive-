@@ -4,7 +4,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from sqlalchemy import func
 import os
 
 app = Flask(__name__)
@@ -13,7 +12,7 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
 database_url = os.getenv("DATABASE_URL")
 if not database_url:
-    raise ValueError("❌ ERROR: DATABASE_URL no está configurada")
+    raise ValueError("ERROR: DATABASE_URL no está configurada")
 
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -47,46 +46,12 @@ def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
     return dt.strftime(fmt)
 
 
-def format_seconds(total_seconds):
-    if total_seconds is None:
-        return "0 min"
-
-    total_seconds = int(total_seconds)
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-
-    parts = []
-    if hours > 0:
-        parts.append(f"{hours} h")
-    if minutes > 0:
-        parts.append(f"{minutes} min")
-    if seconds > 0 or not parts:
-        parts.append(f"{seconds} s")
-
-    return " ".join(parts)
-
-
-@app.template_filter("duration_format")
-def duration_format(total_seconds):
-    return format_seconds(total_seconds)
-
-
 class User(UserMixin, db.Model):
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-
-    is_admin = db.Column(db.Boolean, default=False, nullable=False)
-    is_online = db.Column(db.Boolean, default=False, nullable=False)
-    connection_count = db.Column(db.Integer, default=0, nullable=False)
-    last_login_at = db.Column(db.DateTime, nullable=True)
-    last_logout_at = db.Column(db.DateTime, nullable=True)
-    current_session_started_at = db.Column(db.DateTime, nullable=True)
-    total_connected_seconds = db.Column(db.Integer, default=0, nullable=False)
-    last_session_seconds = db.Column(db.Integer, default=0, nullable=False)
 
     messages = db.relationship(
         "Message",
@@ -131,9 +96,24 @@ class Activity(db.Model):
     description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    payers = db.relationship("ActivityPayer", backref="activity", lazy=True, cascade="all, delete-orphan")
-    costs = db.relationship("ActivityCost", backref="activity", lazy=True, cascade="all, delete-orphan")
-    sales = db.relationship("ActivitySale", backref="activity", lazy=True, cascade="all, delete-orphan")
+    payers = db.relationship(
+        "ActivityPayer",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+    costs = db.relationship(
+        "ActivityCost",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+    sales = db.relationship(
+        "ActivitySale",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
 
 
 class ActivityPayer(db.Model):
@@ -175,19 +155,6 @@ def get_chat_partner():
     return None
 
 
-def is_admin_user(user):
-    if not user or not user.is_authenticated:
-        return False
-    return user.is_admin
-
-
-def promote_admin_user():
-    diego_user = User.query.filter(func.lower(User.username) == "diego").first()
-    if diego_user and not diego_user.is_admin:
-        diego_user.is_admin = True
-        db.session.commit()
-
-
 @app.route("/")
 def home():
     try:
@@ -214,43 +181,4 @@ def register():
         password = request.form.get("password", "").strip()
 
         if not username or not password:
-            flash("Completa todos los campos.")
-            return redirect(url_for("register"))
-
-        if User.query.filter_by(username=username).first():
-            flash("Ese usuario ya existe.")
-            return redirect(url_for("register"))
-
-        hashed_password = generate_password_hash(password)
-        new_user = User(
-            username=username,
-            password_hash=hashed_password,
-            is_admin=username.lower() == "diego"
-        )
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        login_user(new_user)
-
-        new_user.is_online = True
-        new_user.connection_count += 1
-        new_user.last_login_at = datetime.utcnow()
-        new_user.current_session_started_at = datetime.utcnow()
-        db.session.commit()
-
-        return redirect(url_for("wall"))
-
-    return render_template("register.html")
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for("wall"))
-
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
-
-        user 
+            flash("Completa todos los 
