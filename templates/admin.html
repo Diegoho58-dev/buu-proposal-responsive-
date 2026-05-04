@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Administrador | Jenny & Diego{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Panel interno</p>
+      <h1 class="page-title">Administrador</h1>
+      <p class="hero-text">Aquí puedes ver tus datos y un resumen general del sistema.</p>
+    </div>
+
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span>Usuarios</span>
+        <strong>{{ total_users }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Mensajes</span>
+        <strong>{{ total_messages }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Actividades</span>
+        <strong>{{ total_activities }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>Rol</span>
+        <strong>{{ admin_data.rol }}</strong>
+      </article>
+    </div>
+
+    <div class="activity-grid">
+      <article class="form-card">
+        <p class="eyebrow">Mis datos</p>
+        <h2 class="section-title">Información del administrador</h2>
+
+        <div class="simple-list">
+          <div class="simple-item"><strong>Nombre:</strong> {{ admin_data.nombre }}</div>
+          <div class="simple-item"><strong>Usuario:</strong> {{ admin_data.usuario }}</div>
+          <div class="simple-item"><strong>Ubicación:</strong> {{ admin_data.ubicacion }}</div>
+          <div class="simple-item"><strong>Rol:</strong> {{ admin_data.rol }}</div>
+        </div>
+      </article>
+
+      <article class="form-card">
+        <p class="eyebrow">Usuarios</p>
+        <h2 class="section-title">Cuentas registradas</h2>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Administrador</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users %}
+                <tr>
+                  <td>{{ user.id }}</td>
+                  <td>{{ user.username }}</td>
+                  <td>{{ "Sí" if user.is_admin else "No" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+{% endblock %}
