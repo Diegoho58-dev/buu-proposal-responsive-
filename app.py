@@ -11,7 +11,6 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
 database_url = os.getenv("DATABASE_URL", "").strip()
-
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -30,6 +29,8 @@ login_manager.init_app(app)
 
 COLOMBIA_TZ = ZoneInfo("America/Bogota")
 UTC_TZ = ZoneInfo("UTC")
+
+ADMIN_USERNAME = "Diegoho58-dev"
 
 
 @app.template_filter("colombia_time")
@@ -54,6 +55,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     messages = db.relationship(
         "Message",
@@ -144,6 +146,28 @@ def get_chat_partner():
     return None
 
 
+def ensure_admin_column():
+    try:
+        with db.engine.connect() as connection:
+            connection.exec_driver_sql(
+                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE"
+            )
+            connection.commit()
+    except Exception as e:
+        print("ERROR ALTER USER:", e)
+
+
+def ensure_admin_user():
+    try:
+        admin_user = User.query.filter_by(username=ADMIN_USERNAME).first()
+        if admin_user and not admin_user.is_admin:
+            admin_user.is_admin = True
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR ENSURE ADMIN:", e)
+
+
 @app.route("/")
 def home():
     try:
@@ -179,9 +203,16 @@ def register():
 
         try:
             hashed_password = generate_password_hash(password)
-            new_user = User(username=username, password_hash=hashed_password)
+            is_admin = username == ADMIN_USERNAME
+
+            new_user = User(
+                username=username,
+                password_hash=hashed_password,
+                is_admin=is_admin
+            )
             db.session.add(new_user)
             db.session.commit()
+
             login_user(new_user)
             return redirect(url_for("wall"))
         except Exception as e:
@@ -210,6 +241,10 @@ def login():
             return redirect(url_for("login"))
 
         if user and check_password_hash(user.password_hash, password):
+            if user.username == ADMIN_USERNAME and not user.is_admin:
+                user.is_admin = True
+                db.session.commit()
+
             login_user(user)
             return redirect(url_for("wall"))
 
@@ -421,11 +456,39 @@ def add_sale(activity_id):
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
 
-try:
-    with app.app_context():
-        db.create_all()
-except Exception as e:
-    print("ERROR CREATE_ALL:", e)
+@app.route("/admin")
+@login_required
+def admin_dashboard():
+    if not current_user.is_admin:
+        flash("No tienes permisos para entrar al panel administrador.")
+        return redirect(url_for("home"))
+
+    users = User.query.order_by(User.id.asc()).all()
+    total_users = User.query.count()
+    total_messages = Message.query.count()
+    total_activities = Activity.query.count()
+
+    admin_data = {
+        "nombre": "Diego Armando Gomez Dorado",
+        "usuario": current_user.username,
+        "rol": "Administrador",
+        "ubicacion": "Popayán, Cauca, Colombia"
+    }
+
+    return render_template(
+        "admin.html",
+        users=users,
+        total_users=total_users,
+        total_messages=total_messages,
+        total_activities=total_activities,
+        admin_data=admin_data
+    )
+
+
+with app.app_context():
+    db.create_all()
+    ensure_admin_column()
+    ensure_admin_user()
 
 
 if __name__ == "__main__":
