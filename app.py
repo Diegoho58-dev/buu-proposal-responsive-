@@ -240,7 +240,7 @@ def wall():
     messages = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
         ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.created_at.asc(), Message.id.asc()).all()
+    ).order_by(Message.created_at.desc(), Message.id.asc()).all()
 
     return render_template("wall.html", messages=messages, partner=partner)
 
