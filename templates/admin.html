@@ -8,11 +8,11 @@
       <p class="eyebrow">Sistema</p>
       <h1 class="page-title">Estado general</h1>
       <p class="hero-text">
-        Vista resumida del sistema, uso acumulado, actividad reciente y revisión operativa.
+        Vista resumida del sistema, actividad acumulada y revisión operativa.
       </p>
     </div>
 
-    <div class="stats-grid dashboard-kpis">
+    <div class="stats-grid">
       <article class="stat-card">
         <span>Usuarios registrados</span>
         <strong>{{ dashboard.kpis.total_users }}</strong>
@@ -39,7 +39,7 @@
       </article>
 
       <article class="stat-card">
-        <span>Estado del servicio</span>
+        <span>Estado del sistema</span>
         <strong>Operativo</strong>
       </article>
 
@@ -49,7 +49,7 @@
       </article>
 
       <article class="stat-card">
-        <span>Administrador actual</span>
+        <span>Administrador</span>
         <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
@@ -72,24 +72,24 @@
       </article>
 
       <article class="form-card">
-        <p class="eyebrow">Revisión</p>
-        <h2 class="section-title">Estado operativo</h2>
+        <p class="eyebrow">Monitoreo</p>
+        <h2 class="section-title">Revisión general</h2>
 
         <div class="simple-list">
           <div class="simple-item">
-            Aplicación en funcionamiento normal.
+            El panel está orientado a métricas globales del sistema.
           </div>
 
           <div class="simple-item">
-            Conexión con base de datos activa.
+            No se muestran horarios individuales de conexión.
           </div>
 
           <div class="simple-item">
-            Panel enfocado en métricas generales, sin mostrar horarios individuales de conexión.
+            No se muestran usuarios conectados en tiempo real.
           </div>
 
           <div class="simple-item">
-            Estructura estable para continuar agregando alertas reales en el siguiente paso.
+            La siguiente mejora será conectar alertas reales desde el backend.
           </div>
         </div>
       </article>
@@ -97,30 +97,8 @@
 
     <div class="admin-detail-grid">
       <article class="form-card">
-        <p class="eyebrow">Estructura</p>
-        <h2 class="section-title">Capacidad lógica</h2>
-
-        <div class="simple-list">
-          <div class="simple-item">
-            <strong>Tablas principales</strong><br>
-            Usuarios, sesiones, actividades, pagadores, costos, ventas y mensajes.
-          </div>
-
-          <div class="simple-item">
-            <strong>Crecimiento esperado</strong><br>
-            El sistema puede seguir creciendo mientras la base de datos mantenga buen rendimiento y almacenamiento disponible.
-          </div>
-
-          <div class="simple-item">
-            <strong>Uso actual</strong><br>
-            El panel usa conteos y agregados, por lo que la carga visual sigue siendo ligera.
-          </div>
-        </div>
-      </article>
-
-      <article class="form-card">
-        <p class="eyebrow">Control</p>
-        <h2 class="section-title">Datos del administrador</h2>
+        <p class="eyebrow">Administrador</p>
+        <h2 class="section-title">Datos de acceso</h2>
 
         <div class="simple-list">
           <div class="simple-item">
@@ -144,49 +122,7 @@
           </div>
         </div>
       </article>
-    </div>
-  </div>
-</section>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  const dashboard = {{ dashboard_json | safe }};
-
-  const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        labels: {
-          color: "#7a6670",
-          font: {
-            family: "Inter",
-            size: 12
-          }
-        }
-      },
-      tooltip: {
-        backgroundColor: "#2a1f23",
-        titleColor: "#ffffff",
-        bodyColor: "#ffffff",
-        padding: 12,
-        cornerRadius: 12
-      }
-    }
-  };
-
-  new Chart(document.getElementById("sessionsByDayChart"), {
-    type: "bar",
-    data: {
-      labels: dashboard.charts.sessions_by_day.labels,
-      datasets: [{
-        label: "Sesiones",
-        data: dashboard.charts.sessions_by_day.values,
-        backgroundColor: "#c7517d",
-        borderRadius: 10,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      ...commonOptions,
-      sc
+      <article class="form-card">
+        <p class="eyebrow">Base de datos</p>
+        <h2 
