@@ -8,7 +8,7 @@
       <p class="eyebrow">Panel interno</p>
       <h1 class="page-title">Dashboard administrativo</h1>
       <p class="hero-text">
-        Vista resumida del sistema con uso de sesiones, actividad acumulada y alertas operativas.
+        Vista resumida del sistema con uso de sesiones y actividad acumulada.
       </p>
     </div>
 
@@ -39,8 +39,8 @@
       </article>
 
       <article class="stat-card">
-        <span>Sesiones abiertas</span>
-        <strong>{{ dashboard.alerts.open_sessions }}</strong>
+        <span>Administrador</span>
+        <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
 
@@ -58,30 +58,6 @@
         <h2 class="section-title">Minutos conectados por día</h2>
         <div class="chart-wrap">
           <canvas id="minutesByDayChart"></canvas>
-        </div>
-      </article>
-
-      <article class="form-card">
-        <p class="eyebrow">Alertas</p>
-        <h2 class="section-title">Seguimiento operativo</h2>
-
-        <div class="simple-list">
-          <div class="simple-item">
-            <strong>Sesiones pendientes por cerrar:</strong><br>
-            {{ dashboard.alerts.open_sessions }}
-          </div>
-
-          <div class="simple-item">
-            Este panel ya no muestra horarios individuales de conexión.
-          </div>
-
-          <div class="simple-item">
-            Este panel ya no muestra qué usuarios están conectados en tiempo real.
-          </div>
-
-          <div class="simple-item">
-            La información visible está enfocada en uso general y control operativo.
-          </div>
         </div>
       </article>
     </div>
@@ -110,25 +86,6 @@
           <div class="simple-item">
             <strong>Rol</strong><br>
             {{ dashboard.admin_data.rol }}
-          </div>
-        </div>
-      </article>
-
-      <article class="form-card">
-        <p class="eyebrow">Estado</p>
-        <h2 class="section-title">Resumen técnico</h2>
-
-        <div class="simple-list">
-          <div class="simple-item">
-            Base de datos conectada y panel administrativo activo.
-          </div>
-
-          <div class="simple-item">
-            Métricas cargadas desde usuarios, actividades y sesiones.
-          </div>
-
-          <div class="simple-item">
-            Estructura lista para agregar roles como admin y superadmin.
           </div>
         </div>
       </article>
