@@ -442,10 +442,6 @@ def add_sale(activity_id):
 @app.route("/admin")
 @login_required
 def admin_dashboard():
-    if not getattr(current_user, "is_admin", False):
-        flash("No tienes permisos para entrar al panel administrador.")
-        return redirect(url_for("home"))
-
     total_users = User.query.count()
     total_activities = Activity.query.count()
     total_sessions = UserSession.query.count()
@@ -453,8 +449,6 @@ def admin_dashboard():
     completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
     total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
     avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
-
-    open_sessions_count = UserSession.query.filter(UserSession.logout_at.is_(None)).count()
 
     now = datetime.utcnow()
     start_range = now - timedelta(days=6)
@@ -481,7 +475,6 @@ def admin_dashboard():
             "total_users": total_users,
             "total_activities": total_activities,
             "total_sessions": total_sessions,
-            "open_sessions": open_sessions_count,
             "total_connection_hours": round(total_connection_seconds / 3600, 2),
             "avg_connection_minutes": round(avg_connection_seconds / 60, 2)
         },
@@ -498,11 +491,8 @@ def admin_dashboard():
         "admin_data": {
             "nombre": current_user.username,
             "usuario": current_user.username,
-            "rol": "Administrador",
+            "rol": "Usuario",
             "id_usuario": current_user.id
-        },
-        "alerts": {
-            "open_sessions": open_sessions_count
         }
     }
 
