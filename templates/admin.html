@@ -1,40 +1,35 @@
 {% extends "base.html" %}
-{% block title %}Dashboard | Jenny & Diego{% endblock %}
+{% block title %}Dashboard | Sistema{% endblock %}
 
 {% block content %}
 <section class="section">
   <div class="container">
     <div class="section-heading">
-      <p class="eyebrow">Panel interno</p>
-      <h1 class="page-title">Dashboard administrativo</h1>
+      <p class="eyebrow">Sistema</p>
+      <h1 class="page-title">Estado general</h1>
       <p class="hero-text">
-        Métricas generales, uso de sesiones y alertas internas del sistema.
+        Vista resumida del sistema, uso acumulado, actividad reciente y revisión operativa.
       </p>
     </div>
 
     <div class="stats-grid dashboard-kpis">
       <article class="stat-card">
-        <span>Usuarios</span>
+        <span>Usuarios registrados</span>
         <strong>{{ dashboard.kpis.total_users }}</strong>
       </article>
 
       <article class="stat-card">
-        <span>Mensajes</span>
-        <strong>{{ dashboard.kpis.total_messages }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Actividades</span>
+        <span>Actividades creadas</span>
         <strong>{{ dashboard.kpis.total_activities }}</strong>
       </article>
 
       <article class="stat-card">
-        <span>Conexiones</span>
+        <span>Sesiones registradas</span>
         <strong>{{ dashboard.kpis.total_sessions }}</strong>
       </article>
 
       <article class="stat-card">
-        <span>Horas conectadas</span>
+        <span>Horas acumuladas</span>
         <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
       </article>
 
@@ -44,19 +39,24 @@
       </article>
 
       <article class="stat-card">
-        <span>Alertas</span>
-        <strong>Revisar</strong>
+        <span>Estado del servicio</span>
+        <strong>Operativo</strong>
       </article>
 
       <article class="stat-card">
-        <span>Admin actual</span>
+        <span>Base de datos</span>
+        <strong>Conectada</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Administrador actual</span>
         <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
 
     <div class="dashboard-grid">
       <article class="form-card chart-card">
-        <p class="eyebrow">Conexiones</p>
+        <p class="eyebrow">Actividad</p>
         <h2 class="section-title">Sesiones por día</h2>
         <div class="chart-wrap">
           <canvas id="sessionsByDayChart"></canvas>
@@ -64,7 +64,7 @@
       </article>
 
       <article class="form-card chart-card">
-        <p class="eyebrow">Tiempo</p>
+        <p class="eyebrow">Uso</p>
         <h2 class="section-title">Minutos conectados por día</h2>
         <div class="chart-wrap">
           <canvas id="minutesByDayChart"></canvas>
@@ -72,20 +72,24 @@
       </article>
 
       <article class="form-card">
-        <p class="eyebrow">Alertas</p>
-        <h2 class="section-title">Sesiones pendientes</h2>
+        <p class="eyebrow">Revisión</p>
+        <h2 class="section-title">Estado operativo</h2>
 
         <div class="simple-list">
           <div class="simple-item">
-            Revisa las sesiones que aún no han sido cerradas correctamente.
+            Aplicación en funcionamiento normal.
           </div>
 
           <div class="simple-item">
-            Este panel ya no muestra horarios de conexión individuales.
+            Conexión con base de datos activa.
           </div>
 
           <div class="simple-item">
-            Tampoco se muestran usuarios conectados en tiempo real.
+            Panel enfocado en métricas generales, sin mostrar horarios individuales de conexión.
+          </div>
+
+          <div class="simple-item">
+            Estructura estable para continuar agregando alertas reales en el siguiente paso.
           </div>
         </div>
       </article>
@@ -93,8 +97,30 @@
 
     <div class="admin-detail-grid">
       <article class="form-card">
-        <p class="eyebrow">Administrador</p>
-        <h2 class="section-title">Mis datos</h2>
+        <p class="eyebrow">Estructura</p>
+        <h2 class="section-title">Capacidad lógica</h2>
+
+        <div class="simple-list">
+          <div class="simple-item">
+            <strong>Tablas principales</strong><br>
+            Usuarios, sesiones, actividades, pagadores, costos, ventas y mensajes.
+          </div>
+
+          <div class="simple-item">
+            <strong>Crecimiento esperado</strong><br>
+            El sistema puede seguir creciendo mientras la base de datos mantenga buen rendimiento y almacenamiento disponible.
+          </div>
+
+          <div class="simple-item">
+            <strong>Uso actual</strong><br>
+            El panel usa conteos y agregados, por lo que la carga visual sigue siendo ligera.
+          </div>
+        </div>
+      </article>
+
+      <article class="form-card">
+        <p class="eyebrow">Control</p>
+        <h2 class="section-title">Datos del administrador</h2>
 
         <div class="simple-list">
           <div class="simple-item">
@@ -115,25 +141,6 @@
           <div class="simple-item">
             <strong>Rol</strong><br>
             {{ dashboard.admin_data.rol }}
-          </div>
-        </div>
-      </article>
-
-      <article class="form-card">
-        <p class="eyebrow">Estado general</p>
-        <h2 class="section-title">Observaciones del sistema</h2>
-
-        <div class="simple-list">
-          <div class="simple-item">
-            El panel se concentra en métricas generales y uso agregado de sesiones.
-          </div>
-
-          <div class="simple-item">
-            Se ocultaron visualmente los horarios de conexión y el detalle por usuario.
-          </div>
-
-          <div class="simple-item">
-            En el siguiente paso se conectarán las alertas reales desde el backend.
           </div>
         </div>
       </article>
@@ -182,49 +189,4 @@
     },
     options: {
       ...commonOptions,
-      scales: {
-        x: {
-          ticks: { color: "#7a6670" },
-          grid: { display: false }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { color: "#7a6670", precision: 0 },
-          grid: { color: "rgba(42, 31, 35, 0.08)" }
-        }
-      }
-    }
-  });
-
-  new Chart(document.getElementById("minutesByDayChart"), {
-    type: "line",
-    data: {
-      labels: dashboard.charts.minutes_by_day.labels,
-      datasets: [{
-        label: "Minutos conectados",
-        data: dashboard.charts.minutes_by_day.values,
-        borderColor: "#a63f66",
-        backgroundColor: "rgba(199, 81, 125, 0.15)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }]
-    },
-    options: {
-      ...commonOptions,
-      scales: {
-        x: {
-          ticks: { color: "#7a6670" },
-          grid: { display: false }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { color: "#7a6670" },
-          grid: { color: "rgba(42, 31, 35, 0.08)" }
-        }
-      }
-    }
-  });
-</script>
-{% endblock %}
+      sc
