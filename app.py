@@ -157,7 +157,7 @@ def load_user(user_id):
 def get_chat_partner():
     if current_user.id == 2:
         return User.query.get(3)
-    if current_user.id == 3:
+    elif current_user.id == 3:
         return User.query.get(2)
     return None
 
