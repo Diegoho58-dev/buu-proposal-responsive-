@@ -125,4 +125,119 @@
 
       <article class="form-card">
         <p class="eyebrow">Base de datos</p>
-        <h2 
+        <h2 class="section-title">Estructura actual</h2>
+
+        <div class="simple-list">
+          <div class="simple-item">
+            <strong>Módulos principales</strong><br>
+            Usuarios, sesiones y actividades.
+          </div>
+
+          <div class="simple-item">
+            <strong>Estado esperado</strong><br>
+            Operación estable mientras continúe la conexión con la base.
+          </div>
+
+          <div class="simple-item">
+            <strong>Escalabilidad</strong><br>
+            La aplicación puede seguir creciendo con nuevos indicadores y alertas.
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const dashboard = {{ dashboard_json | safe }};
+
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: "#7a6670",
+          font: {
+            family: "Inter",
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: "#2a1f23",
+        titleColor: "#ffffff",
+        bodyColor: "#ffffff",
+        padding: 12,
+        cornerRadius: 12
+      }
+    }
+  };
+
+  const sessionsCanvas = document.getElementById("sessionsByDayChart");
+  if (sessionsCanvas && dashboard.charts && dashboard.charts.sessions_by_day) {
+    new Chart(sessionsCanvas, {
+      type: "bar",
+      data: {
+        labels: dashboard.charts.sessions_by_day.labels,
+        datasets: [{
+          label: "Sesiones",
+          data: dashboard.charts.sessions_by_day.values,
+          backgroundColor: "#c7517d",
+          borderRadius: 10,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          x: {
+            ticks: { color: "#7a6670" },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#7a6670", precision: 0 },
+            grid: { color: "rgba(42, 31, 35, 0.08)" }
+          }
+        }
+      }
+    });
+  }
+
+  const minutesCanvas = document.getElementById("minutesByDayChart");
+  if (minutesCanvas && dashboard.charts && dashboard.charts.minutes_by_day) {
+    new Chart(minutesCanvas, {
+      type: "line",
+      data: {
+        labels: dashboard.charts.minutes_by_day.labels,
+        datasets: [{
+          label: "Minutos conectados",
+          data: dashboard.charts.minutes_by_day.values,
+          borderColor: "#a63f66",
+          backgroundColor: "rgba(199, 81, 125, 0.15)",
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          x: {
+            ticks: { color: "#7a6670" },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#7a6670" },
+            grid: { color: "rgba(42, 31, 35, 0.08)" }
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
