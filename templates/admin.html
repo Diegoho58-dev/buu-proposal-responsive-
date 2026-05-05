@@ -7,7 +7,9 @@
     <div class="section-heading">
       <p class="eyebrow">Panel interno</p>
       <h1 class="page-title">Dashboard administrativo</h1>
-      <p class="hero-text">Métricas generales, sesiones, conexiones y tiempo de uso.</p>
+      <p class="hero-text">
+        Métricas generales, uso de sesiones y alertas internas del sistema.
+      </p>
     </div>
 
     <div class="stats-grid dashboard-kpis">
@@ -32,11 +34,6 @@
       </article>
 
       <article class="stat-card">
-        <span>Sesiones activas</span>
-        <strong>{{ dashboard.kpis.active_sessions }}</strong>
-      </article>
-
-      <article class="stat-card">
         <span>Horas conectadas</span>
         <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
       </article>
@@ -44,6 +41,11 @@
       <article class="stat-card">
         <span>Promedio por sesión</span>
         <strong>{{ dashboard.kpis.avg_connection_minutes }} min</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Alertas</span>
+        <strong>Revisar</strong>
       </article>
 
       <article class="stat-card">
@@ -69,11 +71,22 @@
         </div>
       </article>
 
-      <article class="form-card chart-card">
-        <p class="eyebrow">Usuarios</p>
-        <h2 class="section-title">Sesiones por usuario</h2>
-        <div class="chart-wrap doughnut-wrap">
-          <canvas id="sessionsByUserChart"></canvas>
+      <article class="form-card">
+        <p class="eyebrow">Alertas</p>
+        <h2 class="section-title">Sesiones pendientes</h2>
+
+        <div class="simple-list">
+          <div class="simple-item">
+            Revisa las sesiones que aún no han sido cerradas correctamente.
+          </div>
+
+          <div class="simple-item">
+            Este panel ya no muestra horarios de conexión individuales.
+          </div>
+
+          <div class="simple-item">
+            Tampoco se muestran usuarios conectados en tiempo real.
+          </div>
         </div>
       </article>
     </div>
@@ -106,32 +119,22 @@
         </div>
       </article>
 
-      <article class="form-card admin-sessions-card">
-        <p class="eyebrow">Sesiones recientes</p>
-        <h2 class="section-title">Últimas conexiones</h2>
+      <article class="form-card">
+        <p class="eyebrow">Estado general</p>
+        <h2 class="section-title">Observaciones del sistema</h2>
 
         <div class="simple-list">
-          {% for s in latest_sessions %}
-            <div class="simple-item">
-              <strong>{{ s.user.username }}</strong><br>
-              Entrada: {{ s.login_at | colombia_time | datetime_format }}<br>
-              Salida:
-              {% if s.logout_at %}
-                {{ s.logout_at | colombia_time | datetime_format }}
-              {% else %}
-                En curso
-              {% endif %}
-              <br>
-              Duración:
-              {% if s.duration_seconds %}
-                {{ (s.duration_seconds / 60) | round(1) }} min
-              {% else %}
-                En curso
-              {% endif %}
-            </div>
-          {% else %}
-            <div class="simple-item empty">No hay sesiones recientes.</div>
-          {% endfor %}
+          <div class="simple-item">
+            El panel se concentra en métricas generales y uso agregado de sesiones.
+          </div>
+
+          <div class="simple-item">
+            Se ocultaron visualmente los horarios de conexión y el detalle por usuario.
+          </div>
+
+          <div class="simple-item">
+            En el siguiente paso se conectarán las alertas reales desde el backend.
+          </div>
         </div>
       </article>
     </div>
@@ -186,13 +189,8 @@
         },
         y: {
           beginAtZero: true,
-          ticks: {
-            color: "#7a6670",
-            precision: 0
-          },
-          grid: {
-            color: "rgba(42, 31, 35, 0.08)"
-          }
+          ticks: { color: "#7a6670", precision: 0 },
+          grid: { color: "rgba(42, 31, 35, 0.08)" }
         }
       }
     }
@@ -223,35 +221,9 @@
         y: {
           beginAtZero: true,
           ticks: { color: "#7a6670" },
-          grid: {
-            color: "rgba(42, 31, 35, 0.08)"
-          }
+          grid: { color: "rgba(42, 31, 35, 0.08)" }
         }
       }
-    }
-  });
-
-  new Chart(document.getElementById("sessionsByUserChart"), {
-    type: "doughnut",
-    data: {
-      labels: dashboard.charts.sessions_by_user.labels,
-      datasets: [{
-        label: "Sesiones por usuario",
-        data: dashboard.charts.sessions_by_user.values,
-        backgroundColor: [
-          "#c7517d",
-          "#7f8cff",
-          "#f0b36d",
-          "#89c9a5",
-          "#d984b6",
-          "#8f7ae5"
-        ],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      ...commonOptions,
-      cutout: "62%"
     }
   });
 </script>
