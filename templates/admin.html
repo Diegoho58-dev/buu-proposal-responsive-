@@ -5,10 +5,10 @@
 <section class="section">
   <div class="container">
     <div class="section-heading">
-      <p class="eyebrow">Sistema</p>
-      <h1 class="page-title">Estado general</h1>
+      <p class="eyebrow">Panel interno</p>
+      <h1 class="page-title">Dashboard administrativo</h1>
       <p class="hero-text">
-        Vista resumida del sistema, actividad acumulada y revisión operativa.
+        Vista resumida del sistema con uso de sesiones, actividad acumulada y alertas operativas.
       </p>
     </div>
 
@@ -29,7 +29,7 @@
       </article>
 
       <article class="stat-card">
-        <span>Horas acumuladas</span>
+        <span>Horas conectadas</span>
         <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
       </article>
 
@@ -39,24 +39,14 @@
       </article>
 
       <article class="stat-card">
-        <span>Estado del sistema</span>
-        <strong>Operativo</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Base de datos</span>
-        <strong>Conectada</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Administrador</span>
-        <strong>{{ dashboard.admin_data.usuario }}</strong>
+        <span>Sesiones abiertas</span>
+        <strong>{{ dashboard.alerts.open_sessions }}</strong>
       </article>
     </div>
 
     <div class="dashboard-grid">
       <article class="form-card chart-card">
-        <p class="eyebrow">Actividad</p>
+        <p class="eyebrow">Conexiones</p>
         <h2 class="section-title">Sesiones por día</h2>
         <div class="chart-wrap">
           <canvas id="sessionsByDayChart"></canvas>
@@ -64,7 +54,7 @@
       </article>
 
       <article class="form-card chart-card">
-        <p class="eyebrow">Uso</p>
+        <p class="eyebrow">Tiempo</p>
         <h2 class="section-title">Minutos conectados por día</h2>
         <div class="chart-wrap">
           <canvas id="minutesByDayChart"></canvas>
@@ -72,24 +62,25 @@
       </article>
 
       <article class="form-card">
-        <p class="eyebrow">Monitoreo</p>
-        <h2 class="section-title">Revisión general</h2>
+        <p class="eyebrow">Alertas</p>
+        <h2 class="section-title">Seguimiento operativo</h2>
 
         <div class="simple-list">
           <div class="simple-item">
-            El panel está orientado a métricas globales del sistema.
+            <strong>Sesiones pendientes por cerrar:</strong><br>
+            {{ dashboard.alerts.open_sessions }}
           </div>
 
           <div class="simple-item">
-            No se muestran horarios individuales de conexión.
+            Este panel ya no muestra horarios individuales de conexión.
           </div>
 
           <div class="simple-item">
-            No se muestran usuarios conectados en tiempo real.
+            Este panel ya no muestra qué usuarios están conectados en tiempo real.
           </div>
 
           <div class="simple-item">
-            La siguiente mejora será conectar alertas reales desde el backend.
+            La información visible está enfocada en uso general y control operativo.
           </div>
         </div>
       </article>
@@ -124,23 +115,20 @@
       </article>
 
       <article class="form-card">
-        <p class="eyebrow">Base de datos</p>
-        <h2 class="section-title">Estructura actual</h2>
+        <p class="eyebrow">Estado</p>
+        <h2 class="section-title">Resumen técnico</h2>
 
         <div class="simple-list">
           <div class="simple-item">
-            <strong>Módulos principales</strong><br>
-            Usuarios, sesiones y actividades.
+            Base de datos conectada y panel administrativo activo.
           </div>
 
           <div class="simple-item">
-            <strong>Estado esperado</strong><br>
-            Operación estable mientras continúe la conexión con la base.
+            Métricas cargadas desde usuarios, actividades y sesiones.
           </div>
 
           <div class="simple-item">
-            <strong>Escalabilidad</strong><br>
-            La aplicación puede seguir creciendo con nuevos indicadores y alertas.
+            Estructura lista para agregar roles como admin y superadmin.
           </div>
         </div>
       </article>
