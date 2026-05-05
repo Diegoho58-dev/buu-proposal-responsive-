@@ -4,7 +4,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from sqlalchemy import func
 import json
 import os
 
@@ -31,9 +30,6 @@ login_manager.init_app(app)
 COLOMBIA_TZ = ZoneInfo("America/Bogota")
 UTC_TZ = ZoneInfo("UTC")
 
-# IMPORTANTE:
-# Aquí debes poner el ID real de TU usuario en la base de datos.
-# Ejemplo: si tu usuario Diego tiene id 2, entonces dejas 2.
 ADMIN_USER_ID = 2
 
 
@@ -161,7 +157,7 @@ def load_user(user_id):
 def get_chat_partner():
     if current_user.id == 2:
         return User.query.get(3)
-    elif current_user.id == 3:
+    if current_user.id == 3:
         return User.query.get(2)
     return None
 
@@ -450,16 +446,15 @@ def admin_dashboard():
         flash("No tienes permisos para entrar al panel administrador.")
         return redirect(url_for("home"))
 
-    users = User.query.order_by(User.id.asc()).all()
     total_users = User.query.count()
-    total_messages = Message.query.count()
     total_activities = Activity.query.count()
     total_sessions = UserSession.query.count()
 
     completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
     total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
     avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
-    active_sessions = UserSession.query.filter(UserSession.logout_at.is_(None)).count()
+
+    open_sessions_count = UserSession.query.filter(UserSession.logout_at.is_(None)).count()
 
     now = datetime.utcnow()
     start_range = now - timedelta(days=6)
@@ -478,22 +473,15 @@ def admin_dashboard():
         day_key = s.login_at.date().strftime("%d/%m")
         if day_key in sessions_by_day:
             sessions_by_day[day_key] += 1
-            if s.duration_seconds:
-                minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
-
-    user_labels = []
-    user_session_counts = []
-    for user in users:
-        user_labels.append(user.username)
-        user_session_counts.append(len(user.sessions))
+        if s.duration_seconds:
+            minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
 
     dashboard = {
         "kpis": {
             "total_users": total_users,
-            "total_messages": total_messages,
             "total_activities": total_activities,
             "total_sessions": total_sessions,
-            "active_sessions": active_sessions,
+            "open_sessions": open_sessions_count,
             "total_connection_hours": round(total_connection_seconds / 3600, 2),
             "avg_connection_minutes": round(avg_connection_seconds / 60, 2)
         },
@@ -505,26 +493,21 @@ def admin_dashboard():
             "minutes_by_day": {
                 "labels": list(minutes_by_day.keys()),
                 "values": list(minutes_by_day.values())
-            },
-            "sessions_by_user": {
-                "labels": user_labels,
-                "values": user_session_counts
             }
         },
         "admin_data": {
-            "nombre": "Diego Armando Hoyos Dorado",
+            "nombre": current_user.username,
             "usuario": current_user.username,
             "rol": "Administrador",
             "id_usuario": current_user.id
+        },
+        "alerts": {
+            "open_sessions": open_sessions_count
         }
     }
 
-    latest_sessions = UserSession.query.order_by(UserSession.login_at.desc()).limit(10).all()
-
     return render_template(
         "admin.html",
-        users=users,
-        latest_sessions=latest_sessions,
         dashboard=dashboard,
         dashboard_json=json.dumps(dashboard)
     )
@@ -534,7 +517,6 @@ with app.app_context():
     db.create_all()
     ensure_admin_column()
     assign_admin_by_id()
-
 
 if __name__ == "__main__":
     app.run(debug=True)
