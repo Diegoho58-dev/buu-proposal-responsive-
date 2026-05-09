@@ -991,3 +991,175 @@ textarea {
     height: 54px;
   }
 }
+.auth-logo-love {
+  position: relative;
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.auth-logo-love .love-line {
+  width: 88px;
+  height: 1px;
+  margin: 0 auto 18px;
+  background: linear-gradient(90deg, transparent, rgba(199, 81, 125, 0.5), transparent);
+}
+
+.auth-logo-love h1 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  line-height: 1;
+}
+
+.auth-logo-love .name-left,
+.auth-logo-love .name-right {
+  font-family: "Instrument Serif", serif;
+  font-size: clamp(2.2rem, 5vw, 3.3rem);
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+
+.auth-logo-love .love-amp {
+  font-family: "Instrument Serif", serif;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--primary);
+  transform: translateY(-2px);
+  text-shadow: 0 6px 18px rgba(199, 81, 125, 0.18);
+}
+
+.auth-logo-love p {
+  margin-top: 10px;
+  color: var(--primary-dark);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+
+.auth-background::before,
+.auth-background::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.auth-background::before {
+  width: 180px;
+  height: 180px;
+  left: 8%;
+  bottom: 10%;
+  background: radial-gradient(circle, rgba(199, 81, 125, 0.16), rgba(199, 81, 125, 0.03) 60%, transparent 72%);
+  animation: bubbleFloatOne 10s ease-in-out infinite;
+}
+
+.auth-background::after {
+  width: 240px;
+  height: 240px;
+  right: 10%;
+  top: 18%;
+  background: radial-gradient(circle, rgba(199, 81, 125, 0.14), rgba(199, 81, 125, 0.02) 62%, transparent 74%);
+  animation: bubbleFloatTwo 13s ease-in-out infinite;
+}
+
+.glow-one {
+  top: 40px;
+  left: -40px;
+  background: rgba(199, 81, 125, 0.22);
+  animation: driftGlowOne 9s ease-in-out infinite;
+}
+
+.glow-two {
+  top: 50px;
+  right: -20px;
+  background: rgba(199, 81, 125, 0.18);
+  animation: driftGlowTwo 12s ease-in-out infinite;
+}
+
+.grid-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(199, 81, 125, 0.35);
+  box-shadow: 0 0 14px rgba(199, 81, 125, 0.20);
+  animation: sparkleFloat 7s ease-in-out infinite;
+}
+
+.dot-1 { top: 20%; left: 11%; animation-delay: 0s; }
+.dot-2 { top: 28%; left: 33%; animation-delay: 1.5s; }
+.dot-3 { top: 56%; right: 12%; animation-delay: 2.7s; }
+.dot-4 { bottom: 23%; left: 26%; animation-delay: 0.8s; }
+.dot-5 { bottom: 15%; right: 18%; animation-delay: 2s; }
+
+@keyframes bubbleFloatOne {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(18px, -24px, 0) scale(1.04);
+  }
+  50% {
+    transform: translate3d(-8px, -42px, 0) scale(0.98);
+  }
+  75% {
+    transform: translate3d(14px, -18px, 0) scale(1.03);
+  }
+}
+
+@keyframes bubbleFloatTwo {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  30% {
+    transform: translate3d(-20px, 18px, 0) scale(1.03);
+  }
+  60% {
+    transform: translate3d(10px, -26px, 0) scale(0.97);
+  }
+  80% {
+    transform: translate3d(-12px, -10px, 0) scale(1.02);
+  }
+}
+
+@keyframes driftGlowOne {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(22px, 18px, 0);
+  }
+}
+
+@keyframes driftGlowTwo {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-28px, 20px, 0);
+  }
+}
+
+@keyframes sparkleFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-16px) scale(1.18);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-background::before,
+  .auth-background::after,
+  .glow-one,
+  .glow-two,
+  .grid-dot {
+    animation: none;
+  }
+}
