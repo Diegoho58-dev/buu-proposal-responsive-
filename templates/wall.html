@@ -10,7 +10,7 @@
           <p class="chat-kicker">Tus conversaciones</p>
           <h1>Mensajes</h1>
         </div>
-        <span class="chat-count">1</span>
+        <span class="chat-count">{% if partner %}1{% else %}0{% endif %}</span>
       </div>
 
       <div class="chat-search">
@@ -21,12 +21,20 @@
         {% if partner %}
         <a href="{{ url_for('wall') }}" class="chat-contact active">
           <div class="chat-avatar">{{ partner.username[:1]|upper }}</div>
+
           <div class="chat-contact-body">
             <div class="chat-contact-top">
               <strong>{{ partner.username }}</strong>
               <span>Activo</span>
             </div>
-            <p>Tu chat principal por ahora.</p>
+
+            <p>
+              {% if messages and messages|length > 0 %}
+                {{ messages[-1].content[:38] }}{% if messages[-1].content|length > 38 %}...{% endif %}
+              {% else %}
+                Tu chat principal por ahora.
+              {% endif %}
+            </p>
           </div>
         </a>
         {% else %}
@@ -52,15 +60,28 @@
         </div>
       </header>
 
-      <div class="chat-messages">
+      <div class="chat-messages" id="chatMessages">
         {% if messages %}
-          {% for message in messages|reverse %}
+          {% for message in messages %}
             <article class="chat-bubble {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
               <div class="chat-bubble-content">
                 <p>{{ message.content }}</p>
-                <span>
-                  {{ message.created_at|colombia_time|datetime_format("%d/%m/%Y %I:%M %p") }}
-                </span>
+
+                <div class="chat-meta">
+                  <span>
+                    {{ message.created_at|colombia_time|datetime_format("%d/%m/%Y %I:%M %p") }}
+                  </span>
+
+                  {% if message.sender_id == current_user.id %}
+                    <span class="read-status {% if message.is_read %}is-read{% endif %}">
+                      {% if message.is_read %}
+                        Leído
+                      {% else %}
+                        Enviado
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                </div>
               </div>
             </article>
           {% endfor %}
@@ -73,13 +94,15 @@
         {% endif %}
       </div>
 
-      <form method="POST" class="chat-composer">
+      <form method="POST" class="chat-composer" id="chatComposer">
         <textarea
           name="content"
+          id="chatInput"
           rows="1"
           placeholder="Escribe un mensaje bonito..."
           required
         ></textarea>
+
         <button type="submit" class="btn chat-send">Enviar</button>
       </form>
       {% else %}
@@ -91,4 +114,57 @@
     </section>
   </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const chatMessages = document.getElementById('chatMessages');
+  const chatComposer = document.getElementById('chatComposer');
+  const chatInput = document.getElementById('chatInput');
+
+  const resizeTextarea = (textarea) => {
+    if (!textarea) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 130)}px`;
+  };
+
+  const scrollToBottom = (behavior = 'auto') => {
+    if (!chatMessages) return;
+    chatMessages.scrollTo({
+      top: chatMessages.scrollHeight,
+      behavior
+    });
+  };
+
+  if (chatInput) {
+    resizeTextarea(chatInput);
+
+    chatInput.addEventListener('input', () => {
+      resizeTextarea(chatInput);
+    });
+
+    chatInput.addEventListener('focus', () => {
+      setTimeout(() => scrollToBottom('smooth'), 180);
+    });
+  }
+
+  scrollToBottom();
+
+  if (chatComposer) {
+    chatComposer.addEventListener('submit', () => {
+      if (chatInput) {
+        resizeTextarea(chatInput);
+      }
+      setTimeout(() => scrollToBottom('smooth'), 60);
+    });
+  }
+
+  window.addEventListener('load', () => {
+    scrollToBottom();
+  });
+
+  window.addEventListener('resize', () => {
+    setTimeout(() => scrollToBottom(), 120);
+  });
+});
+</script>
 {% endblock %}
