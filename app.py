@@ -15,7 +15,6 @@ from flask_login import (
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
-
 app = Flask(__name__)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
@@ -51,7 +50,7 @@ def colombia_time(dt):
 
 
 @app.template_filter("datetime_format")
-def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
+def datetime_format(dt, fmt="%d/%m/%Y %I:%M %p"):
     if not dt:
         return ""
     return dt.strftime(fmt)
@@ -105,10 +104,8 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
     sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-
     is_read = db.Column(db.Boolean, nullable=False, default=False)
     read_at = db.Column(db.DateTime, nullable=True)
 
@@ -215,7 +212,6 @@ def assign_admin_by_id():
         if admin_user and not admin_user.is_admin:
             admin_user.is_admin = True
             db.session.commit()
-            print(f"Usuario ID {ADMIN_USER_ID} marcado como administrador.")
     except Exception as e:
         db.session.rollback()
         print("ERROR ASIGNANDO ADMIN POR ID:", e)
@@ -250,12 +246,7 @@ def end_user_session():
 
 @app.route("/")
 def home():
-    try:
-        latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
-    except Exception as e:
-        print("ERROR BD:", e)
-        latest_messages = []
-
+    latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
     return render_template("home.html", latest_messages=latest_messages)
 
 
@@ -399,7 +390,6 @@ def activities():
         activity = Activity(title=title, description=description)
         db.session.add(activity)
         db.session.commit()
-
         flash("Actividad creada correctamente.")
         return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -438,7 +428,6 @@ def add_payer(activity_id):
     payer = ActivityPayer(name=name, activity_id=activity.id)
     db.session.add(payer)
     db.session.commit()
-
     flash("Persona agregada.")
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -463,7 +452,6 @@ def add_cost(activity_id):
     cost = ActivityCost(description=description, amount=amount, activity_id=activity.id)
     db.session.add(cost)
     db.session.commit()
-
     flash("Costo agregado.")
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -488,7 +476,6 @@ def add_sale(activity_id):
     sale = ActivitySale(description=description, amount=amount, activity_id=activity.id)
     db.session.add(sale)
     db.session.commit()
-
     flash("Venta agregada.")
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
