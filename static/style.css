@@ -1656,3 +1656,10 @@ textarea {
     max-width: 90%;
   }
 }
+.wa-time {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+    font-size: 11px;
+    margin-top: 6px;
+}
