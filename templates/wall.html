@@ -1,170 +1,78 @@
 {% extends "base.html" %}
-{% block title %}Chat{% endblock %}
+{% block title %}Mensajes | Jenny & Diego{% endblock %}
 
 {% block content %}
-<section class="chat-page">
-  <div class="chat-shell">
-    <aside class="chat-sidebar">
-      <div class="chat-sidebar-header">
-        <div>
-          <p class="chat-kicker">Tus conversaciones</p>
-          <h1>Mensajes</h1>
-        </div>
-        <span class="chat-count">{% if partner %}1{% else %}0{% endif %}</span>
-      </div>
+<section class="section">
+  <div class="container wall-grid">
+    <article class="form-card">
+      <p class="eyebrow">Nuevo mensaje</p>
+      <h1 class="page-title">Escribir en el chat</h1>
+      <p class="logged-as">Estás como {{ current_user.username }}</p>
 
-      <div class="chat-search">
-        <input type="text" placeholder="Buscar chat..." disabled>
-      </div>
-
-      <div class="chat-list">
-        {% if partner %}
-        <a href="{{ url_for('wall') }}" class="chat-contact active">
-          <div class="chat-avatar">{{ partner.username[:1]|upper }}</div>
-
-          <div class="chat-contact-body">
-            <div class="chat-contact-top">
-              <strong>{{ partner.username }}</strong>
-              <span>Activo</span>
-            </div>
-
-            <p>
-              {% if messages and messages|length > 0 %}
-                {{ messages[-1].content[:38] }}{% if messages[-1].content|length > 38 %}...{% endif %}
-              {% else %}
-                Tu chat principal por ahora.
-              {% endif %}
-            </p>
-          </div>
-        </a>
-        {% else %}
-        <div class="chat-contact empty">
-          <div class="chat-contact-body">
-            <strong>Sin conversación</strong>
-            <p>No hay un chat disponible en este momento.</p>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </aside>
-
-    <section class="chat-main">
       {% if partner %}
-      <header class="chat-main-header">
-        <div class="chat-user">
-          <div class="chat-avatar large">{{ partner.username[:1]|upper }}</div>
-          <div>
-            <h2>{{ partner.username }}</h2>
-            <p>Conversando como {{ current_user.username }}</p>
-          </div>
-        </div>
-      </header>
+        <p class="logged-as">Conversando con {{ partner.username }}</p>
 
-      <div class="chat-messages" id="chatMessages">
+        <form method="POST" class="message-form">
+          <label for="content">Tu mensaje</label>
+          <textarea
+            id="content"
+            name="content"
+            rows="5"
+            placeholder="Escribe algo bonito..."
+            required
+          ></textarea>
+          <button type="submit" class="btn btn-primary">Enviar mensaje</button>
+        </form>
+      {% else %}
+        <article class="empty-card">
+          <h3>Chat no disponible</h3>
+          <p>Este usuario no participa en la conversación principal.</p>
+        </article>
+      {% endif %}
+    </article>
+
+    <section>
+      <div class="section-heading">
+        <p class="eyebrow">Chat</p>
+        <h2>Mensajes compartidos</h2>
+      </div>
+
+      <div class="messages-panel">
         {% if messages %}
           {% for message in messages %}
-            <article class="chat-bubble {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
-              <div class="chat-bubble-content">
-                <p>{{ message.content }}</p>
-
-                <div class="chat-meta">
-                  <span>
-                    {{ message.created_at|colombia_time|datetime_format("%d/%m/%Y %I:%M %p") }}
-                  </span>
-
-                  {% if message.sender_id == current_user.id %}
-                    <span class="read-status {% if message.is_read %}is-read{% endif %}">
-                      {% if message.is_read %}
-                        Leído
-                      {% else %}
-                        Enviado
-                      {% endif %}
-                    </span>
-                  {% endif %}
-                </div>
+            <article class="message-card {% if message.sender_id == current_user.id %}from-diego{% else %}from-jenny{% endif %}">
+              <div class="message-meta">
+                <strong>{{ message.sender.username }}</strong>
+                <span>{{ message.created_at|colombia_time|datetime_format("%d/%m/%Y %I:%M %p") }}</span>
               </div>
+
+              <p>{{ message.content }}</p>
+
+              {% if message.sender_id == current_user.id %}
+                <div class="message-meta" style="margin-top: 12px;">
+                  <span>
+                    {% if message.is_read %}
+                      Leído
+                    {% else %}
+                      Enviado
+                    {% endif %}
+                  </span>
+                </div>
+
+                <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}">
+                  <button type="submit" class="delete-btn">Eliminar</button>
+                </form>
+              {% endif %}
             </article>
           {% endfor %}
         {% else %}
-          <div class="chat-empty-state">
-            <div class="chat-empty-icon">❤</div>
+          <article class="empty-card">
             <h3>Aún no hay mensajes</h3>
-            <p>Escribe el primero para comenzar esta conversación.</p>
-          </div>
+            <p>Escribe el primero para empezar este chat.</p>
+          </article>
         {% endif %}
       </div>
-
-      <form method="POST" class="chat-composer" id="chatComposer">
-        <textarea
-          name="content"
-          id="chatInput"
-          rows="1"
-          placeholder="Escribe un mensaje bonito..."
-          required
-        ></textarea>
-
-        <button type="submit" class="btn chat-send">Enviar</button>
-      </form>
-      {% else %}
-      <div class="chat-unavailable">
-        <h2>Chat no disponible</h2>
-        <p>Este usuario todavía no tiene una conversación principal habilitada.</p>
-      </div>
-      {% endif %}
     </section>
   </div>
 </section>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const chatMessages = document.getElementById('chatMessages');
-  const chatComposer = document.getElementById('chatComposer');
-  const chatInput = document.getElementById('chatInput');
-
-  const resizeTextarea = (textarea) => {
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 130)}px`;
-  };
-
-  const scrollToBottom = (behavior = 'auto') => {
-    if (!chatMessages) return;
-    chatMessages.scrollTo({
-      top: chatMessages.scrollHeight,
-      behavior
-    });
-  };
-
-  if (chatInput) {
-    resizeTextarea(chatInput);
-
-    chatInput.addEventListener('input', () => {
-      resizeTextarea(chatInput);
-    });
-
-    chatInput.addEventListener('focus', () => {
-      setTimeout(() => scrollToBottom('smooth'), 180);
-    });
-  }
-
-  scrollToBottom();
-
-  if (chatComposer) {
-    chatComposer.addEventListener('submit', () => {
-      if (chatInput) {
-        resizeTextarea(chatInput);
-      }
-      setTimeout(() => scrollToBottom('smooth'), 60);
-    });
-  }
-
-  window.addEventListener('load', () => {
-    scrollToBottom();
-  });
-
-  window.addEventListener('resize', () => {
-    setTimeout(() => scrollToBottom(), 120);
-  });
-});
-</script>
 {% endblock %}
