@@ -1,11 +1,20 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import json
 import os
+
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash, generate_password_hash
+
 
 app = Flask(__name__)
 
@@ -29,7 +38,6 @@ login_manager.init_app(app)
 
 COLOMBIA_TZ = ZoneInfo("America/Bogota")
 UTC_TZ = ZoneInfo("UTC")
-
 ADMIN_USER_ID = 2
 
 
@@ -57,33 +65,26 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
 
-    messages = db.relationship(
-        "Message",
-        foreign_keys="Message.user_id",
-        backref="user",
-        lazy=True,
-        cascade="all, delete-orphan"
-    )
-
     sent_messages = db.relationship(
         "Message",
         foreign_keys="Message.sender_id",
         backref="sender",
-        lazy=True
+        lazy=True,
+        cascade="all, delete-orphan",
     )
 
     received_messages = db.relationship(
         "Message",
         foreign_keys="Message.receiver_id",
         backref="receiver",
-        lazy=True
+        lazy=True,
     )
 
     sessions = db.relationship(
         "UserSession",
         backref="user",
         lazy=True,
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
 
@@ -103,11 +104,13 @@ class Message(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    is_read = db.Column(db.Boolean, nullable=False, default=False)
+    read_at = db.Column(db.DateTime, nullable=True)
 
 
 class Activity(db.Model):
@@ -116,11 +119,26 @@ class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    payers = db.relationship("ActivityPayer", backref="activity", lazy=True, cascade="all, delete-orphan")
-    costs = db.relationship("ActivityCost", backref="activity", lazy=True, cascade="all, delete-orphan")
-    sales = db.relationship("ActivitySale", backref="activity", lazy=True, cascade="all, delete-orphan")
+    payers = db.relationship(
+        "ActivityPayer",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan",
+    )
+    costs = db.relationship(
+        "ActivityCost",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan",
+    )
+    sales = db.relationship(
+        "ActivitySale",
+        backref="activity",
+        lazy=True,
+        cascade="all, delete-orphan",
+    )
 
 
 class ActivityPayer(db.Model):
@@ -151,18 +169,22 @@ class ActivitySale(db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 
 def get_chat_partner():
+    if not current_user.is_authenticated:
+        return None
+
     if current_user.id == 2:
-        return User.query.get(3)
-    elif current_user.id == 3:
-        return User.query.get(2)
+        return db.session.get(User, 3)
+    if current_user.id == 3:
+        return db.session.get(User, 2)
+
     return None
 
 
-def ensure_admin_column():
+def ensure_user_table_columns():
     try:
         with db.engine.connect() as connection:
             connection.exec_driver_sql(
@@ -173,9 +195,23 @@ def ensure_admin_column():
         print("ERROR AGREGANDO is_admin:", e)
 
 
+def ensure_message_table_columns():
+    try:
+        with db.engine.connect() as connection:
+            connection.exec_driver_sql(
+                'ALTER TABLE "message" ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE'
+            )
+            connection.exec_driver_sql(
+                'ALTER TABLE "message" ADD COLUMN IF NOT EXISTS read_at TIMESTAMP NULL'
+            )
+            connection.commit()
+    except Exception as e:
+        print("ERROR AGREGANDO COLUMNAS DE MENSAJE:", e)
+
+
 def assign_admin_by_id():
     try:
-        admin_user = User.query.get(ADMIN_USER_ID)
+        admin_user = db.session.get(User, ADMIN_USER_ID)
         if admin_user and not admin_user.is_admin:
             admin_user.is_admin = True
             db.session.commit()
@@ -189,7 +225,7 @@ def start_user_session(user):
     new_session = UserSession(
         user_id=user.id,
         login_at=datetime.utcnow(),
-        ip_address=request.headers.get("X-Forwarded-For", request.remote_addr)
+        ip_address=request.headers.get("X-Forwarded-For", request.remote_addr),
     )
     db.session.add(new_session)
     db.session.commit()
@@ -201,7 +237,7 @@ def end_user_session():
     if not active_session_id:
         return
 
-    current_session = UserSession.query.get(active_session_id)
+    current_session = db.session.get(UserSession, active_session_id)
     if current_session and current_session.logout_at is None:
         current_session.logout_at = datetime.utcnow()
         current_session.duration_seconds = int(
@@ -303,19 +339,33 @@ def wall():
         if content:
             message = Message(
                 content=content,
-                user_id=current_user.id,
                 sender_id=current_user.id,
-                receiver_id=partner.id
+                receiver_id=partner.id,
+                is_read=False,
             )
             db.session.add(message)
             db.session.commit()
 
         return redirect(url_for("wall"))
 
-    messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id)) |
-        ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
-    ).order_by(Message.created_at.desc()).all()
+    messages = (
+        Message.query.filter(
+            ((Message.sender_id == current_user.id) & (Message.receiver_id == partner.id))
+            | ((Message.sender_id == partner.id) & (Message.receiver_id == current_user.id))
+        )
+        .order_by(Message.created_at.asc())
+        .all()
+    )
+
+    updated = False
+    for message in messages:
+        if message.receiver_id == current_user.id and not message.is_read:
+            message.is_read = True
+            message.read_at = datetime.utcnow()
+            updated = True
+
+    if updated:
+        db.session.commit()
 
     return render_template("wall.html", messages=messages, partner=partner)
 
@@ -349,6 +399,7 @@ def activities():
         activity = Activity(title=title, description=description)
         db.session.add(activity)
         db.session.commit()
+
         flash("Actividad creada correctamente.")
         return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -370,7 +421,7 @@ def activity_detail(activity_id):
         activity=activity,
         total_costs=total_costs,
         total_sales=total_sales,
-        balance=balance
+        balance=balance,
     )
 
 
@@ -387,6 +438,7 @@ def add_payer(activity_id):
     payer = ActivityPayer(name=name, activity_id=activity.id)
     db.session.add(payer)
     db.session.commit()
+
     flash("Persona agregada.")
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -411,6 +463,7 @@ def add_cost(activity_id):
     cost = ActivityCost(description=description, amount=amount, activity_id=activity.id)
     db.session.add(cost)
     db.session.commit()
+
     flash("Costo agregado.")
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -435,6 +488,7 @@ def add_sale(activity_id):
     sale = ActivitySale(description=description, amount=amount, activity_id=activity.id)
     db.session.add(sale)
     db.session.commit()
+
     flash("Venta agregada.")
     return redirect(url_for("activity_detail", activity_id=activity.id))
 
@@ -442,13 +496,26 @@ def add_sale(activity_id):
 @app.route("/admin")
 @login_required
 def admin_dashboard():
+    if not current_user.is_admin:
+        flash("No tienes permisos para entrar al panel administrativo.")
+        return redirect(url_for("home"))
+
     total_users = User.query.count()
     total_activities = Activity.query.count()
     total_sessions = UserSession.query.count()
 
-    completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
-    total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
-    avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
+    completed_sessions = UserSession.query.filter(
+        UserSession.duration_seconds.isnot(None)
+    ).all()
+
+    total_connection_seconds = sum(
+        s.duration_seconds for s in completed_sessions if s.duration_seconds
+    )
+    avg_connection_seconds = (
+        int(total_connection_seconds / len(completed_sessions))
+        if completed_sessions
+        else 0
+    )
 
     now = datetime.utcnow()
     start_range = now - timedelta(days=6)
@@ -476,37 +543,39 @@ def admin_dashboard():
             "total_activities": total_activities,
             "total_sessions": total_sessions,
             "total_connection_hours": round(total_connection_seconds / 3600, 2),
-            "avg_connection_minutes": round(avg_connection_seconds / 60, 2)
+            "avg_connection_minutes": round(avg_connection_seconds / 60, 2),
         },
         "charts": {
             "sessions_by_day": {
                 "labels": list(sessions_by_day.keys()),
-                "values": list(sessions_by_day.values())
+                "values": list(sessions_by_day.values()),
             },
             "minutes_by_day": {
                 "labels": list(minutes_by_day.keys()),
-                "values": list(minutes_by_day.values())
-            }
+                "values": list(minutes_by_day.values()),
+            },
         },
         "admin_data": {
             "nombre": current_user.username,
             "usuario": current_user.username,
-            "rol": "Usuario",
-            "id_usuario": current_user.id
-        }
+            "rol": "Administrador",
+            "id_usuario": current_user.id,
+        },
     }
 
     return render_template(
         "admin.html",
         dashboard=dashboard,
-        dashboard_json=json.dumps(dashboard)
+        dashboard_json=json.dumps(dashboard),
     )
 
 
 with app.app_context():
     db.create_all()
-    ensure_admin_column()
+    ensure_user_table_columns()
+    ensure_message_table_columns()
     assign_admin_by_id()
+
 
 if __name__ == "__main__":
     app.run(debug=True)
