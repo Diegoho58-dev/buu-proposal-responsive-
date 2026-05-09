@@ -716,3 +716,141 @@ main {
     width: min(100% - 22px, var(--container));
   }
 }
+/* ===== CHAT MEJORADO ===== */
+
+.wall-grid {
+  grid-template-columns: 380px 1fr;
+  align-items: start;
+}
+
+.messages-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 22px;
+  min-height: 520px;
+  box-shadow: var(--shadow-sm);
+}
+
+.message-card {
+  width: fit-content;
+  max-width: min(78%, 680px);
+  padding: 14px 16px;
+  border-radius: 22px;
+  box-shadow: 0 10px 24px rgba(90, 39, 62, 0.08);
+  border: 1px solid transparent;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.message-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(90, 39, 62, 0.12);
+}
+
+.message-card p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.message-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.message-meta strong {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.from-diego {
+  align-self: flex-end;
+  background: linear-gradient(180deg, #d85d8c 0%, #c7517d 100%);
+  color: #ffffff;
+  border-top-right-radius: 8px;
+}
+
+.from-diego .message-meta,
+.from-diego .message-meta strong {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.from-diego .delete-btn {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  margin-top: 12px;
+  padding: 10px 14px;
+}
+
+.from-diego .delete-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.from-jenny {
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid rgba(199, 81, 125, 0.14);
+  color: var(--text);
+  border-top-left-radius: 8px;
+}
+
+.from-jenny .message-meta,
+.from-jenny .message-meta strong {
+  color: var(--muted);
+}
+
+.form-card {
+  position: sticky;
+  top: 110px;
+}
+
+.message-form textarea {
+  min-height: 150px;
+}
+
+@media (max-width: 900px) {
+  .wall-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-card {
+    position: static;
+  }
+
+  .messages-panel {
+    min-height: auto;
+  }
+
+  .message-card {
+    max-width: 88%;
+  }
+}
+
+@media (max-width: 640px) {
+  .messages-panel {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .message-card {
+    max-width: 94%;
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+
+  .message-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
