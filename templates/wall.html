@@ -2,169 +2,77 @@
 {% block title %}Chat{% endblock %}
 
 {% block content %}
-<section class="chat-page">
-  <div class="chat-shell">
-    <aside class="chat-sidebar">
-      <div class="chat-sidebar-header">
-        <div>
-          <p class="chat-kicker">Tus conversaciones</p>
-          <h1>Mensajes</h1>
+<div class="wa-container">
+
+    <div class="wa-sidebar">
+        <div class="wa-sidebar-header">
+            <h2>Chats</h2>
         </div>
-        <span class="chat-count">{% if partner %}1{% else %}0{% endif %}</span>
-      </div>
 
-      <div class="chat-search">
-        <input type="text" placeholder="Buscar chat..." disabled>
-      </div>
-
-      <div class="chat-list">
         {% if partner %}
-        <a href="{{ url_for('wall') }}" class="chat-contact active">
-          <div class="chat-avatar">{{ partner.username[:1]|upper }}</div>
-
-          <div class="chat-contact-body">
-            <div class="chat-contact-top">
-              <strong>{{ partner.username }}</strong>
-              <span>Activo</span>
+        <div class="wa-contact active">
+            <div class="wa-avatar">
+                {{ partner.username[:1]|upper }}
             </div>
 
-            <p>
-              {% if messages and messages|length > 0 %}
-                {{ messages[-1].content[:38] }}{% if messages[-1].content|length > 38 %}...{% endif %}
-              {% else %}
-                Tu chat principal por ahora.
-              {% endif %}
-            </p>
-          </div>
-        </a>
-        {% else %}
-        <div class="chat-contact empty">
-          <div class="chat-contact-body">
-            <strong>Sin conversación</strong>
-            <p>No hay un chat disponible en este momento.</p>
-          </div>
+            <div class="wa-contact-info">
+                <strong>{{ partner.username }}</strong>
+            </div>
         </div>
         {% endif %}
-      </div>
-    </aside>
+    </div>
 
-    <section class="chat-main">
-      {% if partner %}
-      <header class="chat-main-header">
-        <div class="chat-user">
-          <div class="chat-avatar large">{{ partner.username[:1]|upper }}</div>
-          <div>
-            <h2>{{ partner.username }}</h2>
-            <p>Conversando como {{ current_user.username }}</p>
-          </div>
+    <div class="wa-chat">
+        {% if partner %}
+        <div class="wa-chat-header">
+            <div class="wa-avatar">
+                {{ partner.username[:1]|upper }}
+            </div>
+            <div>
+                <strong>{{ partner.username }}</strong>
+                <p>En línea</p>
+            </div>
         </div>
-      </header>
 
-      <div class="chat-messages" id="chatMessages">
-        {% if messages %}
-          {% for message in messages %}
-            <article class="chat-bubble {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
-              <div class="chat-bubble-content">
-                <p>{{ message.content }}</p>
+        <div class="wa-messages" id="chatMessages">
+            {% for message in messages %}
+            <div class="wa-message {% if message.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
+                <div class="wa-bubble">
+                    {{ message.content }}
 
-                <div class="chat-meta">
-                  <span>
-                    {{ message.created_at|colombia_time|datetime_format("%d/%m/%Y %I:%M %p") }}
-                  </span>
+                    <span class="wa-time">
+                        {{ message.created_at|datetime_format }}
 
-                  {% if message.sender_id == current_user.id %}
-                    <span class="read-status {% if message.is_read %}is-read{% endif %}">
-                      {% if message.is_read %}
-                        Leído
-                      {% else %}
-                        Enviado
-                      {% endif %}
+                        {% if message.sender_id == current_user.id %}
+                            {% if message.is_seen %}
+                                <span style="color:#34B7F1;">✔✔</span>
+                            {% else %}
+                                <span style="color:gray;">✔✔</span>
+                            {% endif %}
+                        {% endif %}
                     </span>
-                  {% endif %}
                 </div>
-              </div>
-            </article>
-          {% endfor %}
-        {% else %}
-          <div class="chat-empty-state">
-            <div class="chat-empty-icon">❤</div>
-            <h3>Aún no hay mensajes</h3>
-            <p>Escribe el primero para comenzar esta conversación.</p>
-          </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <form method="POST" class="wa-input-area">
+            <textarea
+                name="content"
+                placeholder="Escribe un mensaje"
+                required
+            ></textarea>
+
+            <button type="submit">➤</button>
+        </form>
         {% endif %}
-      </div>
-
-      <form method="POST" class="chat-composer" id="chatComposer">
-        <textarea
-          name="content"
-          id="chatInput"
-          rows="1"
-          placeholder="Escribe un mensaje bonito..."
-          required
-        ></textarea>
-
-        <button type="submit" class="btn chat-send">Enviar</button>
-      </form>
-      {% else %}
-      <div class="chat-unavailable">
-        <h2>Chat no disponible</h2>
-        <p>Este usuario todavía no tiene una conversación principal habilitada.</p>
-      </div>
-      {% endif %}
-    </section>
-  </div>
-</section>
+    </div>
+</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const chatMessages = document.getElementById('chatMessages');
-  const chatComposer = document.getElementById('chatComposer');
-  const chatInput = document.getElementById('chatInput');
-
-  const resizeTextarea = (textarea) => {
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 130)}px`;
-  };
-
-  const scrollToBottom = (behavior = 'auto') => {
-    if (!chatMessages) return;
-    chatMessages.scrollTo({
-      top: chatMessages.scrollHeight,
-      behavior
-    });
-  };
-
-  if (chatInput) {
-    resizeTextarea(chatInput);
-
-    chatInput.addEventListener('input', () => {
-      resizeTextarea(chatInput);
-    });
-
-    chatInput.addEventListener('focus', () => {
-      setTimeout(() => scrollToBottom('smooth'), 180);
-    });
-  }
-
-  scrollToBottom();
-
-  if (chatComposer) {
-    chatComposer.addEventListener('submit', () => {
-      if (chatInput) {
-        resizeTextarea(chatInput);
-      }
-      setTimeout(() => scrollToBottom('smooth'), 60);
-    });
-  }
-
-  window.addEventListener('load', () => {
-    scrollToBottom();
-  });
-
-  window.addEventListener('resize', () => {
-    setTimeout(() => scrollToBottom(), 120);
-  });
-});
+const chat = document.getElementById("chatMessages");
+if(chat){
+   chat.scrollTop = chat.scrollHeight;
+}
 </script>
 {% endblock %}
