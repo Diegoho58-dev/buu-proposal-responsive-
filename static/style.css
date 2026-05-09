@@ -762,3 +762,232 @@ textarea {
     flex-direction: column;
   }
 }
+.auth-shell-login {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(122, 102, 112, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 102, 112, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, #fffafb 0%, #fff5f7 100%);
+  background-size: 60px 60px, 60px 60px, cover;
+}
+
+.auth-background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 999px;
+  filter: blur(65px);
+  opacity: 0.45;
+}
+
+.glow-one {
+  top: 40px;
+  left: -40px;
+  background: rgba(199, 81, 125, 0.22);
+}
+
+.glow-two {
+  top: 50px;
+  right: -20px;
+  background: rgba(199, 81, 125, 0.18);
+}
+
+.grid-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(199, 81, 125, 0.45);
+  box-shadow: 0 0 14px rgba(199, 81, 125, 0.22);
+}
+
+.dot-1 { top: 20%; left: 11%; }
+.dot-2 { top: 28%; left: 33%; }
+.dot-3 { top: 56%; right: 12%; }
+.dot-4 { bottom: 23%; left: 26%; }
+.dot-5 { bottom: 15%; right: 18%; }
+
+.auth-topmark {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 2;
+}
+
+.auth-mini-brand {
+  font-size: 1.9rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.auth-mini-brand span {
+  color: var(--primary);
+}
+
+.auth-panel {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-card-modern {
+  width: min(100%, 460px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(42, 31, 35, 0.08);
+  box-shadow: 0 24px 70px rgba(90, 39, 62, 0.12);
+  border-radius: 28px;
+  padding: 34px 28px 26px;
+  backdrop-filter: blur(10px);
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-logo h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.auth-logo h1 span {
+  color: var(--primary);
+}
+
+.auth-logo p {
+  margin-top: 8px;
+  color: var(--primary-dark);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.auth-copy {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-copy h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.auth-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.97rem;
+}
+
+.auth-form-modern {
+  gap: 16px;
+}
+
+.input-group {
+  display: grid;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.auth-form-modern input {
+  height: 58px;
+  border-radius: 16px;
+  border: 1px solid rgba(42, 31, 35, 0.12);
+  background: rgba(255, 248, 248, 0.92);
+  padding: 0 16px;
+  color: var(--text);
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.auth-form-modern input:focus {
+  border-color: rgba(199, 81, 125, 0.6);
+  box-shadow: 0 0 0 4px rgba(199, 81, 125, 0.12);
+  background: #fff;
+}
+
+.auth-submit {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 6px;
+  background: linear-gradient(180deg, #cf5b86 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 16px 30px rgba(199, 81, 125, 0.24);
+}
+
+.auth-submit:hover {
+  background: linear-gradient(180deg, #bb4a74 0%, #8f3357 100%);
+}
+
+.auth-links {
+  margin-top: 18px;
+  text-align: center;
+}
+
+.auth-links a {
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.auth-links a:hover {
+  color: var(--primary);
+}
+
+@media (max-width: 640px) {
+  .auth-shell-login {
+    padding: 24px 14px;
+    align-items: center;
+  }
+
+  .auth-card-modern {
+    width: 100%;
+    padding: 24px 18px 20px;
+    border-radius: 22px;
+  }
+
+  .auth-mini-brand {
+    font-size: 1.4rem;
+  }
+
+  .auth-logo h1 {
+    font-size: 1.9rem;
+  }
+
+  .auth-copy h2 {
+    font-size: 1.15rem;
+  }
+
+  .auth-copy p {
+    font-size: 0.92rem;
+  }
+
+  .auth-form-modern input {
+    height: 54px;
+  }
+}
