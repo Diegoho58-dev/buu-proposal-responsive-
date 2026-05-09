@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Sistema{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="section-heading">
+      <p class="eyebrow">Panel interno</p>
+      <h1 class="page-title">Dashboard administrativo</h1>
+      <p class="hero-text">
+        Vista resumida del sistema con uso de sesiones y actividad acumulada.
+      </p>
+    </div>
+
+    <div class="stats-grid">
+      <article class="stat-card">
+        <span>Usuarios registrados</span>
+        <strong>{{ dashboard.kpis.total_users }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Actividades creadas</span>
+        <strong>{{ dashboard.kpis.total_activities }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Sesiones registradas</span>
+        <strong>{{ dashboard.kpis.total_sessions }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Horas conectadas</span>
+        <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Promedio por sesión</span>
+        <strong>{{ dashboard.kpis.avg_connection_minutes }} min</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Usuario actual</span>
+        <strong>{{ dashboard.admin_data.usuario }}</strong>
+      </article>
+    </div>
+
+    <div class="dashboard-grid">
+      <article class="form-card chart-card">
+        <p class="eyebrow">Conexiones</p>
+        <h2 class="section-title">Sesiones por día</h2>
+        <div class="chart-wrap">
+          <canvas id="sessionsByDayChart"></canvas>
+        </div>
+      </article>
+
+      <article class="form-card chart-card">
+        <p class="eyebrow">Tiempo</p>
+        <h2 class="section-title">Minutos conectados por día</h2>
+        <div class="chart-wrap">
+          <canvas id="minutesByDayChart"></canvas>
+        </div>
+      </article>
+    </div>
+
+    <div class="admin-detail-grid">
+      <article class="form-card">
+        <p class="eyebrow">Usuario</p>
+        <h2 class="section-title">Datos de acceso</h2>
+
+        <div class="simple-list">
+          <div class="simple-item">
+            <strong>Nombre</strong><br>
+            {{ dashboard.admin_data.nombre }}
+          </div>
+
+          <div class="simple-item">
+            <strong>Usuario</strong><br>
+            {{ dashboard.admin_data.usuario }}
+          </div>
+
+          <div class="simple-item">
+            <strong>ID</strong><br>
+            {{ dashboard.admin_data.id_usuario }}
+          </div>
+
+          <div class="simple-item">
+            <strong>Rol</strong><br>
+            {{ dashboard.admin_data.rol }}
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const dashboard = {{ dashboard_json | safe }};
+
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: "#7a6670",
+          font: {
+            family: "Inter",
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: "#2a1f23",
+        titleColor: "#ffffff",
+        bodyColor: "#ffffff",
+        padding: 12,
+        cornerRadius: 12
+      }
+    }
+  };
+
+  const sessionsCanvas = document.getElementById("sessionsByDayChart");
+  if (sessionsCanvas && dashboard.charts && dashboard.charts.sessions_by_day) {
+    new Chart(sessionsCanvas, {
+      type: "bar",
+      data: {
+        labels: dashboard.charts.sessions_by_day.labels,
+        datasets: [{
+          label: "Sesiones",
+          data: dashboard.charts.sessions_by_day.values,
+          backgroundColor: "#c7517d",
+          borderRadius: 10,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          x: {
+            ticks: { color: "#7a6670" },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#7a6670", precision: 0 },
+            grid: { color: "rgba(42, 31, 35, 0.08)" }
+          }
+        }
+      }
+    });
+  }
+
+  const minutesCanvas = document.getElementById("minutesByDayChart");
+  if (minutesCanvas && dashboard.charts && dashboard.charts.minutes_by_day) {
+    new Chart(minutesCanvas, {
+      type: "line",
+      data: {
+        labels: dashboard.charts.minutes_by_day.labels,
+        datasets: [{
+          label: "Minutos conectados",
+          data: dashboard.charts.minutes_by_day.values,
+          borderColor: "#a63f66",
+          backgroundColor: "rgba(199, 81, 125, 0.15)",
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          x: {
+            ticks: { color: "#7a6670" },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#7a6670" },
+            grid: { color: "rgba(42, 31, 35, 0.08)" }
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endblock %}
