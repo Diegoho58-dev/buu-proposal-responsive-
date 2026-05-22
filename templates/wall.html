@@ -2,67 +2,92 @@
 {% block title %}Mensajes | Jenny & Diego{% endblock %}
 
 {% block content %}
-<section class="section">
-  <div class="container wall-grid">
-    <article class="form-card">
-      <p class="eyebrow">Nuevo mensaje</p>
-      <h1 class="page-title">Escribir en el chat</h1>
-      <p class="logged-as">Estás como {{ current_user.username }}</p>
-
-      {% if partner %}
-        <p class="logged-as">Conversando con {{ partner.username }}</p>
-
-        <form method="POST" class="message-form">
-          <label for="content">Tu mensaje</label>
-          <textarea id="content" name="content" rows="5" placeholder="Escribe algo bonito..." required></textarea>
-          <button type="submit" class="btn btn-primary">Enviar mensaje</button>
-        </form>
-      {% else %}
-        <article class="empty-card">
-          <h3>Chat no disponible</h3>
-          <p>Este usuario no participa en la conversación principal.</p>
-        </article>
-      {% endif %}
-    </article>
-
-    <section>
-      <div class="section-heading">
-        <p class="eyebrow">Chat</p>
-        <h2>Mensajes compartidos</h2>
+<section class="section chat-section">
+  <div class="container chat-container">
+    <!-- Chat Window -->
+    <div class="chat-window">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <h2 class="chat-title">{{ partner.username if partner else 'Chat' }}</h2>
+          <p class="chat-subtitle">{{ current_user.username }}</p>
+        </div>
       </div>
 
-      <div class="messages-panel">
+      <!-- Messages Area with Scroll -->
+      <div class="chat-messages" id="messagesContainer">
         {% if messages %}
-          {% for message in messages %}
-            <article class="message-card {% if message.sender_id == current_user.id %}from-diego{% else %}from-jenny{% endif %}">
-              <div class="message-meta">
-                <strong>
-                  {% if message.sender %}
-                    {{ message.sender.username }}
-                  {% else %}
-                    {{ message.user.username }}
-                  {% endif %}
-                </strong>
-                <span>{{ message.created_at | colombia_time | datetime_format }}</span>
+          {% for message in messages|reverse %}
+            <div class="message-wrapper {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+              <div class="message-bubble">
+                <p class="message-text">{{ message.content }}</p>
+                <span class="message-time">{{ message.created_at | colombia_time | datetime_format("%H:%M") }}</span>
               </div>
-
-              <p>{{ message.content }}</p>
-
               {% if message.sender_id == current_user.id %}
-                <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}">
-                  <button type="submit" class="delete-btn">Eliminar</button>
+                <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}" class="message-delete-form">
+                  <button type="submit" class="message-delete-btn" title="Eliminar">×</button>
                 </form>
               {% endif %}
-            </article>
+            </div>
           {% endfor %}
         {% else %}
-          <article class="empty-card">
+          <div class="chat-empty">
+            <p class="chat-empty-icon">💬</p>
             <h3>Aún no hay mensajes</h3>
             <p>Escribe el primero para empezar este chat.</p>
-          </article>
+          </div>
         {% endif %}
       </div>
-    </section>
+
+      <!-- Input Area -->
+      {% if partner %}
+        <form method="POST" class="chat-input-form">
+          <textarea 
+            id="content" 
+            name="content" 
+            class="chat-input" 
+            placeholder="Escribe tu mensaje..." 
+            required
+            rows="1"
+          ></textarea>
+          <button type="submit" class="chat-send-btn">
+            <span class="send-icon">➤</span>
+          </button>
+        </form>
+      {% else %}
+        <div class="chat-unavailable">
+          <p>Chat no disponible</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
 </section>
+
+<script>
+  // Auto-scroll to bottom on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('messagesContainer');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  });
+
+  // Auto-expand textarea
+  const textarea = document.getElementById('content');
+  if (textarea) {
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Reset on form submit
+    const form = document.querySelector('.chat-input-form');
+    if (form) {
+      form.addEventListener('submit', function() {
+        setTimeout(() => {
+          textarea.style.height = 'auto';
+        }, 100);
+      });
+    }
+  }
+</script>
 {% endblock %}
