@@ -1,23 +1,83 @@
 {% extends "base.html" %}
-{% block title %}Crear cuenta{% endblock %}
+{% block title %}Crear Cuenta | Jenny & Diego{% endblock %}
 
 {% block content %}
-<section class="section">
-  <div class="container narrow">
-    <article class="form-card auth-card">
-      <p class="eyebrow">Registro</p>
-      <h1 class="page-title">Crear cuenta</h1>
+<section class="section login-section">
+  <div class="login-container">
+    <!-- Left Side: Visual -->
+    <div class="login-visual">
+      <div class="login-illustration">
+        <img src="{{ url_for('static', filename='login_illustration.png') }}" alt="Jenny & Diego" class="illustration-image">
+      </div>
+      <div class="login-tagline">
+        <h2>Únete a nosotros</h2>
+        <p>Crea tu cuenta y comienza a compartir momentos especiales con Jenny & Diego</p>
+      </div>
+    </div>
 
-      <form method="POST" class="message-form">
-        <label for="username">Usuario</label>
-        <input id="username" name="username" type="text" required>
+    <!-- Right Side: Form -->
+    <div class="login-form-wrapper">
+      <article class="login-card">
+        <div class="login-header">
+          <h1 class="login-title">Crear Cuenta</h1>
+          <p class="login-subtitle">Regístrate para acceder a todas las funciones</p>
+        </div>
 
-        <label for="password">Contraseña</label>
-        <input id="password" name="password" type="password" required>
+        <form method="POST" class="login-form">
+          <div class="form-group">
+            <label for="username" class="form-label">
+              <span class="label-text">Usuario</span>
+              <span class="label-icon">👤</span>
+            </label>
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              class="form-input" 
+              placeholder="Elige un nombre de usuario"
+              required
+              autocomplete="username"
+            >
+            <div class="input-focus-border"></div>
+          </div>
 
-        <button type="submit" class="btn btn-primary">Crear usuario</button>
-      </form>
-    </article>
+          <div class="form-group">
+            <label for="password" class="form-label">
+              <span class="label-text">Contraseña</span>
+              <span class="label-icon">🔒</span>
+            </label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-input" 
+              placeholder="Crea una contraseña segura"
+              required
+              autocomplete="new-password"
+            >
+            <div class="input-focus-border"></div>
+          </div>
+
+          <button type="submit" class="btn btn-login">
+            <span class="btn-text">Crear Cuenta</span>
+            <span class="btn-icon">✓</span>
+          </button>
+        </form>
+
+        <div class="login-divider">
+          <span>¿Ya tienes cuenta?</span>
+        </div>
+
+        <a href="{{ url_for('login') }}" class="btn btn-register">
+          <span class="btn-text">Iniciar sesión</span>
+          <span class="btn-icon">→</span>
+        </a>
+
+        <div class="login-footer">
+          <p class="footer-text">Tu información está segura y protegida</p>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
 {% endblock %}
