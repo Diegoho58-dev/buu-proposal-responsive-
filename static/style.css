@@ -1,3 +1,4 @@
+style.css
 :root {
   --bg: #fff8f8;
   --surface: #ffffff;
@@ -760,5 +761,352 @@ textarea {
 
   .hero-actions {
     flex-direction: column;
+  }
+}
+
+
+/* ===== LOGIN MEJORADO ===== */
+
+.login-section {
+  padding: 40px 0;
+  min-height: calc(100vh - 180px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-container {
+  width: min(100% - 32px, 1200px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.login-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.login-illustration {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.illustration-image {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 20px 40px rgba(199, 81, 125, 0.15));
+}
+
+.login-tagline {
+  text-align: center;
+  max-width: 380px;
+}
+
+.login-tagline h2 {
+  font-family: "Instrument Serif", serif;
+  font-size: 2rem;
+  color: var(--text);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+}
+
+.login-tagline p {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.login-form-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 48px 40px;
+  box-shadow: 0 20px 60px rgba(199, 81, 125, 0.08);
+  backdrop-filter: blur(10px);
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.login-title {
+  font-family: "Instrument Serif", serif;
+  font-size: 2.2rem;
+  color: var(--text);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+.login-subtitle {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.login-form {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.form-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.label-icon {
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffdfd 0%, var(--surface-soft) 100%);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all var(--transition);
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: var(--muted-soft);
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(199, 81, 125, 0.12);
+}
+
+.input-focus-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, var(--primary), rgba(199, 81, 125, 0.4));
+  border-radius: 1px;
+  transition: width var(--transition);
+}
+
+.form-input:focus ~ .input-focus-border {
+  width: 100%;
+}
+
+.btn-login,
+.btn-register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+}
+
+.btn-login {
+  background: linear-gradient(180deg, #cf5b86 0%, var(--primary) 100%);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(199, 81, 125, 0.22);
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(199, 81, 125, 0.28);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+.btn-register {
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid var(--line);
+  color: var(--text);
+}
+
+.btn-register:hover {
+  background: #fff;
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.btn-icon {
+  font-size: 1.1rem;
+  transition: transform var(--transition);
+}
+
+.btn-login:hover .btn-icon {
+  transform: translateX(4px);
+}
+
+.login-divider {
+  text-align: center;
+  margin: 28px 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  position: relative;
+}
+
+.login-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+  z-index: 0;
+}
+
+.login-divider span {
+  position: relative;
+  background: rgba(255, 248, 248, 0.95);
+  padding: 0 12px;
+  z-index: 1;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.footer-text {
+  color: var(--muted-soft);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Responsive Design para Login */
+@media (max-width: 1024px) {
+  .login-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .login-visual {
+    order: 2;
+  }
+
+  .login-form-wrapper {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .login-section {
+    padding: 24px 0;
+    min-height: auto;
+  }
+
+  .login-container {
+    gap: 32px;
+  }
+
+  .login-card {
+    padding: 32px 24px;
+  }
+
+  .login-title {
+    font-size: 1.8rem;
+  }
+
+  .login-tagline h2 {
+    font-size: 1.6rem;
+  }
+
+  .login-illustration {
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    gap: 24px;
+  }
+
+  .login-card {
+    padding: 24px 16px;
+  }
+
+  .login-title {
+    font-size: 1.5rem;
+  }
+
+  .btn-login,
+  .btn-register {
+    padding: 14px 20px;
+    font-size: 0.95rem;
+  }
+
+  .login-illustration {
+    max-width: 240px;
+  }
+
+  .login-tagline h2 {
+    font-size: 1.4rem;
   }
 }
