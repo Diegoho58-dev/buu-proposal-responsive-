@@ -209,16 +209,31 @@ def start_user_session(user):
     db.session.commit()
     session["active_session_id"] = new_session.id
 
-def end_user_session():
-    active_session_id = session.get("active_session_id")
-    if not active_session_id:
-        return
-    current_session = UserSession.query.get(active_session_id)
-    if current_session and current_session.logout_at is None:
-        current_session.logout_at = datetime.utcnow()
-        current_session.duration_seconds = int((current_session.logout_at - current_session.login_at).total_seconds())
-        db.session.commit()
-    session.pop("active_session_id", None)
+def start_user_session(user):
+    ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
+
+    if ip_address:
+        ip_address = ip_address.split(",")[0].strip()
+
+    user_agent = request.headers.get("User-Agent", "Desconocido")
+
+    location = get_location_from_ip(ip_address)
+
+    new_session = UserSession(
+        user_id=user.id,
+        login_at=datetime.utcnow(),
+        ip_address=ip_address,
+        user_agent=user_agent,
+        country=location["country"],
+        city=location["city"],
+        latitude=location["latitude"],
+        longitude=location["longitude"]
+    )
+
+    db.session.add(new_session)
+    db.session.commit()
+
+    session["active_session_id"] = new_session.id
 
 def admin_required(f):
     """Decorador para verificar que SOLO Diego (ID 2) puede acceder al panel administrativo"""
