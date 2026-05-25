@@ -187,7 +187,9 @@ def assign_admin_by_id():
 
 
 def start_user_session(user):
-    ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
+     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
+     if ip_address:    
+         ip_address = ip_address.split(",")[0].strip()
     user_agent = request.headers.get("User-Agent", "Desconocido")
     location = get_location_from_ip(ip_address)
     
