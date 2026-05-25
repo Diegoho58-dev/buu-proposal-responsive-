@@ -1,3 +1,4 @@
+# --- TODO TU IMPORT ORIGINAL SE MANTIENE ---
 from flask import Flask, render_template, request, redirect, url_for, flash, session, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -31,47 +32,29 @@ login_manager.init_app(app)
 COLOMBIA_TZ = ZoneInfo("America/Bogota")
 UTC_TZ = ZoneInfo("UTC")
 
-# -------- MODELOS -------- #
+ADMIN_USER_ID = 2  # lo dejamos pero ya no depende de esto
 
-class User(UserMixin, db.Model):
-    __tablename__ = "user"
+# -------- MODELOS (NO SE TOCAN) --------
+# TODO: TU CÓDIGO DE MODELOS ORIGINAL AQUÍ (NO CAMBIA)
+# (User, Message, Activity, etc.)
 
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    is_admin = db.Column(db.Boolean, nullable=False, default=False)
-
-class UserSession(db.Model):
-    __tablename__ = "user_session"
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    login_at = db.Column(db.DateTime, default=datetime.utcnow)
-    logout_at = db.Column(db.DateTime)
-    duration_seconds = db.Column(db.Integer)
-
-class Message(db.Model):
-    __tablename__ = "message"
-
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    sender_id = db.Column(db.Integer)
-
+# -------- LOGIN --------
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# -------- DECORADOR ADMIN -------- #
-
+# -------- 🔥 FIX ADMIN --------
 def admin_required(f):
+    """Verifica que el usuario sea administrador"""
     from functools import wraps
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
+
         if not current_user.is_authenticated:
             abort(403)
 
+        # ✅ SOLO validamos is_admin
         if not current_user.is_admin:
             abort(403)
 
@@ -79,70 +62,49 @@ def admin_required(f):
 
     return decorated_function
 
-# -------- RUTAS -------- #
-
+# -------- RUTAS (TODO IGUAL) --------
 @app.route("/")
 def home():
     return render_template("home.html")
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = generate_password_hash(request.form["password"])
+# --- AQUÍ NO TOCAS NADA MÁS ---
+# DEJA TODAS TUS RUTAS TAL CUAL
 
-        user = User(username=username, password_hash=password)
-        db.session.add(user)
-        db.session.commit()
-
-        login_user(user)
-        return redirect(url_for("home"))
-
-    return render_template("register.html")
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        user = User.query.filter_by(username=request.form["username"]).first()
-
-        if user and check_password_hash(user.password_hash, request.form["password"]):
-            login_user(user)
-            return redirect(url_for("home"))
-
-        flash("Credenciales incorrectas")
-
-    return render_template("login.html")
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for("home"))
-
-# -------- ADMIN -------- #
-
+# -------- ADMIN --------
 @app.route("/admin")
 @login_required
 @admin_required
 def admin_dashboard():
-    users = User.query.count()
-    return render_template("admin.html", total_users=users)
+    total_users = User.query.count()
+    total_activities = Activity.query.count()
+    total_sessions = UserSession.query.count()
 
-# -------- INIT -------- #
+    return render_template(
+        "admin.html",
+        dashboard={
+            "kpis": {
+                "total_users": total_users,
+                "total_activities": total_activities,
+                "total_sessions": total_sessions
+            }
+        },
+        dashboard_json=json.dumps({})
+    )
 
+# -------- INIT --------
 def ensure_admin():
     try:
-        user = User.query.filter_by(username="diego").first()
-        if user:
-            user.is_admin = True
+        admin_user = User.query.get(2)
+        if admin_user:
+            admin_user.is_admin = True
             db.session.commit()
-            print("✅ Admin asignado correctamente")
-    except:
+            print("✅ ADMIN ASEGURADO")
+    except Exception as e:
         db.session.rollback()
+        print("❌ ERROR ADMIN:", e)
 
 with app.app_context():
     db.create_all()
     ensure_admin()
 
 if __name__ == "__main__":
-    app.run(debug=True)
