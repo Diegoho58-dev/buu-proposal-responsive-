@@ -124,10 +124,7 @@ class User(UserMixin, db.Model):
         nullable=False,
     )
 
-    created_at = db.Column(
-        db.DateTime,
-        default=datetime.utcnow,
-    )
+  
 
     messages = db.relationship(
         "Message",
