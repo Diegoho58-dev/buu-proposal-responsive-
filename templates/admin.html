@@ -1,9 +1,11 @@
 {% extends "base.html" %}
+
 {% block title %}Dashboard | Sistema{% endblock %}
 
 {% block content %}
 <section class="section">
   <div class="container">
+
     <div class="section-heading">
       <p class="eyebrow">Panel interno</p>
       <h1 class="page-title">Dashboard administrativo</h1>
@@ -12,6 +14,7 @@
       </p>
     </div>
 
+    <!-- KPIs -->
     <div class="stats-grid">
       <article class="stat-card">
         <span>Usuarios registrados</span>
@@ -29,21 +32,22 @@
       </article>
 
       <article class="stat-card">
+        <span>Sesiones activas</span>
+        <strong>{{ dashboard.kpis.active_sessions }}</strong>
+      </article>
+
+      <article class="stat-card">
         <span>Horas conectadas</span>
         <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
       </article>
 
       <article class="stat-card">
-        <span>Promedio por sesión</span>
+        <span>Promedio sesión</span>
         <strong>{{ dashboard.kpis.avg_connection_minutes }} min</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Usuario actual</span>
-        <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
 
+    <!-- GRÁFICOS -->
     <div class="dashboard-grid">
       <article class="form-card chart-card">
         <p class="eyebrow">Conexiones</p>
@@ -55,73 +59,84 @@
 
       <article class="form-card chart-card">
         <p class="eyebrow">Tiempo</p>
-        <h2 class="section-title">Minutos conectados por día</h2>
+        <h2 class="section-title">Minutos conectados</h2>
         <div class="chart-wrap">
           <canvas id="minutesByDayChart"></canvas>
         </div>
       </article>
     </div>
 
+    <!-- SESIONES ACTIVAS -->
     <div class="admin-detail-grid">
+      <article class="form-card admin-sessions-card">
+        <p class="eyebrow">En tiempo real</p>
+        <h2 class="section-title">Usuarios conectados</h2>
+
+        {% if dashboard.active_sessions %}
+          <div class="simple-list">
+            {% for s in dashboard.active_sessions %}
+              <div class="simple-item">
+                <strong>Usuario:</strong> {{ s.user }}<br>
+                <strong>IP:</strong> {{ s.ip }}<br>
+                <strong>Ubicación:</strong> {{ s.city }}, {{ s.country }}<br>
+                <strong>Duración:</strong> {{ (s.duration_seconds // 60) }} min<br>
+                <strong>Login:</strong> {{ s.login_at }}<br>
+                <strong>Agente:</strong> {{ s.user_agent }}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="simple-item empty">
+            No hay usuarios conectados actualmente.
+          </div>
+        {% endif %}
+      </article>
+
+      <!-- DATOS DEL ADMIN -->
       <article class="form-card">
-        <p class="eyebrow">Usuario</p>
-        <h2 class="section-title">Datos de acceso</h2>
+        <p class="eyebrow">Administrador</p>
+        <h2 class="section-title">Información de acceso</h2>
 
         <div class="simple-list">
           <div class="simple-item">
-            <strong>Nombre</strong><br>
+            <strong>Nombre:</strong><br>
             {{ dashboard.admin_data.nombre }}
           </div>
 
           <div class="simple-item">
-            <strong>Usuario</strong><br>
+            <strong>Usuario:</strong><br>
             {{ dashboard.admin_data.usuario }}
           </div>
 
           <div class="simple-item">
-            <strong>ID</strong><br>
+            <strong>ID:</strong><br>
             {{ dashboard.admin_data.id_usuario }}
           </div>
 
           <div class="simple-item">
-            <strong>Rol</strong><br>
+            <strong>Rol:</strong><br>
             {{ dashboard.admin_data.rol }}
           </div>
         </div>
       </article>
     </div>
+
   </div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
   const dashboard = {{ dashboard_json | safe }};
 
   const commonOptions = {
     responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        labels: {
-          color: "#7a6670",
-          font: {
-            family: "Inter",
-            size: 12
-          }
-        }
-      },
-      tooltip: {
-        backgroundColor: "#2a1f23",
-        titleColor: "#ffffff",
-        bodyColor: "#ffffff",
-        padding: 12,
-        cornerRadius: 12
-      }
-    }
+    maintainAspectRatio: false
   };
 
+  // Gráfico Sesiones
   const sessionsCanvas = document.getElementById("sessionsByDayChart");
-  if (sessionsCanvas && dashboard.charts && dashboard.charts.sessions_by_day) {
+  if (sessionsCanvas) {
     new Chart(sessionsCanvas, {
       type: "bar",
       data: {
@@ -129,60 +144,32 @@
         datasets: [{
           label: "Sesiones",
           data: dashboard.charts.sessions_by_day.values,
-          backgroundColor: "#c7517d",
-          borderRadius: 10,
-          borderSkipped: false
+          backgroundColor: "#c7517d"
         }]
       },
-      options: {
-        ...commonOptions,
-        scales: {
-          x: {
-            ticks: { color: "#7a6670" },
-            grid: { display: false }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#7a6670", precision: 0 },
-            grid: { color: "rgba(42, 31, 35, 0.08)" }
-          }
-        }
-      }
+      options: commonOptions
     });
   }
 
+  // Gráfico Minutos
   const minutesCanvas = document.getElementById("minutesByDayChart");
-  if (minutesCanvas && dashboard.charts && dashboard.charts.minutes_by_day) {
+  if (minutesCanvas) {
     new Chart(minutesCanvas, {
       type: "line",
       data: {
         labels: dashboard.charts.minutes_by_day.labels,
         datasets: [{
-          label: "Minutos conectados",
+          label: "Minutos",
           data: dashboard.charts.minutes_by_day.values,
           borderColor: "#a63f66",
-          backgroundColor: "rgba(199, 81, 125, 0.15)",
-          fill: true,
-          tension: 0.35,
-          pointRadius: 4,
-          pointHoverRadius: 6
+          backgroundColor: "rgba(199, 81, 125, 0.2)",
+          fill: true
         }]
       },
-      options: {
-        ...commonOptions,
-        scales: {
-          x: {
-            ticks: { color: "#7a6670" },
-            grid: { display: false }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#7a6670" },
-            grid: { color: "rgba(42, 31, 35, 0.08)" }
-          }
-        }
-      }
+      options: commonOptions
     });
   }
 </script>
+
 {% endblock %}
+``
