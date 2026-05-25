@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 import json
 import os
 
@@ -27,9 +26,6 @@ login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
-COLOMBIA_TZ = ZoneInfo("America/Bogota")
-UTC_TZ = ZoneInfo("UTC")
-
 ADMIN_USER_ID = 2
 
 @app.context_processor
@@ -38,14 +34,6 @@ def inject_globals():
         'now': datetime.now(),
         'timedelta': timedelta
     }
-
-@app.template_filter("colombia_time")
-def colombia_time(dt):
-    if dt is None:
-        return ""
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC_TZ)
-    return dt.astimezone(COLOMBIA_TZ)
 
 @app.template_filter("datetime_format")
 def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
@@ -74,8 +62,8 @@ class UserSession(db.Model):
     duration_seconds = db.Column(db.Integer, nullable=True)
     ip_address = db.Column(db.String(80), nullable=True)
     user_agent = db.Column(db.String(500), nullable=True)
-    country = db.Column(db.String(100), nullable=True, default="Desconocido")
-    city = db.Column(db.String(100), nullable=True, default="Desconocido")
+    country = db.Column(db.String(100), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
 
@@ -130,43 +118,33 @@ def get_chat_partner():
     return None
 
 def safe_add_column(table_name, column_name, column_type):
-    """Añade una columna de forma segura sin generar errores"""
     try:
         with db.engine.connect() as connection:
-            if "user_session" in table_name:
-                sql = f'ALTER TABLE "{table_name}" ADD COLUMN IF NOT EXISTS "{column_name}" {column_type}'
-            else:
-                sql = f'ALTER TABLE "{table_name}" ADD COLUMN IF NOT EXISTS "{column_name}" {column_type}'
+            sql = f'ALTER TABLE "{table_name}" ADD COLUMN IF NOT EXISTS "{column_name}" {column_type}'
             connection.exec_driver_sql(sql)
             connection.commit()
-    except Exception as e:
+    except:
         pass
 
-def ensure_admin_column():
-    """Asegura que la columna is_admin exista"""
-    safe_add_column("user", "is_admin", "BOOLEAN DEFAULT FALSE")
-
-def ensure_session_columns():
-    """Asegura que todas las columnas de sesión existan"""
-    safe_add_column("user_session", "user_agent", "VARCHAR(500)")
-    safe_add_column("user_session", "country", "VARCHAR(100)")
-    safe_add_column("user_session", "city", "VARCHAR(100)")
-    safe_add_column("user_session", "latitude", "FLOAT")
-    safe_add_column("user_session", "longitude", "FLOAT")
-
-def assign_admin_by_id():
-    """Asigna el rol de administrador a Diego (ID 2)"""
+def init_db():
     try:
-        admin_user = User.query.get(ADMIN_USER_ID)
-        if admin_user:
-            if not admin_user.is_admin:
+        with db.app.app_context():
+            db.create_all()
+            safe_add_column("user", "is_admin", "BOOLEAN DEFAULT FALSE")
+            safe_add_column("user_session", "user_agent", "VARCHAR(500)")
+            safe_add_column("user_session", "country", "VARCHAR(100)")
+            safe_add_column("user_session", "city", "VARCHAR(100)")
+            safe_add_column("user_session", "latitude", "FLOAT")
+            safe_add_column("user_session", "longitude", "FLOAT")
+            
+            admin_user = User.query.get(ADMIN_USER_ID)
+            if admin_user and not admin_user.is_admin:
                 admin_user.is_admin = True
                 db.session.commit()
     except Exception as e:
-        db.session.rollback()
+        print(f"Error en init_db: {e}")
 
 def start_user_session(user):
-    """Inicia una sesión de usuario"""
     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
     user_agent = request.headers.get("User-Agent", "Desconocido")
     
@@ -183,7 +161,6 @@ def start_user_session(user):
     session["active_session_id"] = new_session.id
 
 def end_user_session():
-    """Finaliza la sesión de usuario"""
     active_session_id = session.get("active_session_id")
     if not active_session_id:
         return
@@ -195,7 +172,6 @@ def end_user_session():
     session.pop("active_session_id", None)
 
 def admin_required(f):
-    """Decorador para verificar que SOLO Diego (ID 2) puede acceder"""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -458,11 +434,7 @@ def admin_dashboard():
     
     return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
 
-with app.app_context():
-    db.create_all()
-    ensure_admin_column()
-    ensure_session_columns()
-    assign_admin_by_id()
+init_db()
 
 if __name__ == "__main__":
     app.run(debug=True)
