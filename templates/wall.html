@@ -16,11 +16,44 @@
       <!-- Messages Area with Scroll -->
       <div class="chat-messages" id="messagesContainer">
         {% if messages %}
-          {% for message in messages|reverse %}
+          <!-- Load More Button -->
+          {% if has_more %}
+            <div class="load-more-container">
+              <a href="{{ url_for('wall', offset=next_offset) }}" class="load-more-btn">
+                ↑ Cargar mensajes anteriores
+              </a>
+            </div>
+          {% endif %}
+
+          <!-- Messages Grouped by Date -->
+          {% set current_date = None %}
+          {% for message in messages %}
+            {% set msg_date = (message.created_at | colombia_time).date() %}
+            {% set today = now | colombia_time %}
+            {% set today_date = today.date() %}
+            {% set yesterday_date = (today - timedelta(days=1)).date() %}
+
+            <!-- Date Separator -->
+            {% if msg_date != current_date %}
+              {% set current_date = msg_date %}
+              <div class="date-separator">
+                <span class="date-label">
+                  {% if msg_date == today_date %}
+                    Hoy
+                  {% elif msg_date == yesterday_date %}
+                    Ayer
+                  {% else %}
+                    {{ msg_date.strftime("%d de %B") }}
+                  {% endif %}
+                </span>
+              </div>
+            {% endif %}
+
+            <!-- Message -->
             <div class="message-wrapper {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
               <div class="message-bubble">
                 <p class="message-text">{{ message.content }}</p>
-                <span class="message-time">{{ message.created_at | colombia_time | datetime_format("%H:%M") }}</span>
+                <span class="message-time">{{ (message.created_at | colombia_time).strftime("%H:%M") }}</span>
               </div>
               {% if message.sender_id == current_user.id %}
                 <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}" class="message-delete-form">
