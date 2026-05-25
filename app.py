@@ -470,7 +470,7 @@ def admin_dashboard():
             "city": sess.city,
             "latitude": sess.latitude,
             "longitude": sess.longitude,
-            "login_at": sess.login_at,
+            "login_at": sess.login_at.isoformat() if sess.login_at else None,one
             "duration_seconds": duration,
             "user_agent": sess.user_agent
         })
