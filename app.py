@@ -53,18 +53,29 @@ def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
     if not dt:
         return ""
     return dt.strftime(fmt)
-
+    
 class User(UserMixin, db.Model):
-    __tablename__ = "user"
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    is_admin = db.Column(db.Boolean, nullable=False, default=False)
 
-    messages = db.relationship("Message", foreign_keys="Message.user_id", backref="user", lazy=True, cascade="all, delete-orphan")
-    sent_messages = db.relationship("Message", foreign_keys="Message.sender_id", backref="sender", lazy=True)
-    received_messages = db.relationship("Message", foreign_keys="Message.receiver_id", backref="receiver", lazy=True)
-    sessions = db.relationship("UserSession", backref="user", lazy=True, cascade="all, delete-orphan")
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    username = db.Column(
+        db.String(80),
+        unique=True,
+        nullable=False
+    )
+
+    password_hash = db.Column(
+        db.String(255),
+        nullable=False
+    )
+
+    is_admin = db.Column(
+        db.Boolean,
+        default=False
+    )
 
 class UserSession(db.Model):
     __tablename__ = "user_session"
@@ -175,15 +186,26 @@ def ensure_session_columns():
         print("ERROR AGREGANDO COLUMNAS DE UBICACIÓN:", e)
 
 def assign_admin_by_id():
-    try:
-        admin_user = User.query.get(ADMIN_USER_ID)
-        if admin_user and not admin_user.is_admin:
-            admin_user.is_admin = True
-            db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        print("ERROR ASIGNANDO ADMIN POR ID:", e)
 
+    try:
+
+        admin_user = User.query.get(2)
+
+        if admin_user:
+
+            if not admin_user.is_admin:
+
+                admin_user.is_admin = True
+
+                db.session.commit()
+
+                print("ADMIN ACTIVADO")
+
+    except Exception as e:
+
+        db.session.rollback()
+
+        print("ERROR ADMIN:", e)
 def start_user_session(user):
     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
     user_agent = request.headers.get("User-Agent", "Desconocido")
@@ -215,17 +237,21 @@ def end_user_session():
     session.pop("active_session_id", None)
 
 def admin_required(f):
-    """Decorador para verificar que SOLO Diego (ID 2) puede acceder al panel administrativo"""
+
     from functools import wraps
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Verificar que el usuario está autenticado
+
         if not current_user.is_authenticated:
             abort(403)
-        # Verificar que es Diego (ID 2) y es administrador
-        if current_user.id != ADMIN_USER_ID or not current_user.is_admin:
+
+        # ADMIN PRINCIPAL
+        if current_user.id != 2:
             abort(403)
+
         return f(*args, **kwargs)
+
     return decorated_function
 
 @app.route("/")
@@ -485,10 +511,14 @@ def admin_dashboard():
     return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
 
 with app.app_context():
-    db.create_all()
-    ensure_admin_column()
-    ensure_session_columns()
-    assign_admin_by_id()
 
+    ensure_admin_column()
+
+    ensure_session_columns()
+
+    db.create_all()
+
+    assign_admin_by_id()
+    
 if __name__ == "__main__":
     app.run(debug=True)
