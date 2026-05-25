@@ -6,28 +6,25 @@
 <section class="section">
   <div class="container">
 
+    <!-- HEADER -->
     <div class="section-heading">
       <p class="eyebrow">Panel interno</p>
       <h1 class="page-title">Dashboard administrativo</h1>
       <p class="hero-text">
-        Vista resumida del sistema con uso de sesiones y actividad acumulada.
+        Información en tiempo real del sistema, sesiones y actividad.
       </p>
     </div>
 
     <!-- KPIs -->
     <div class="stats-grid">
+
       <article class="stat-card">
         <span>Usuarios registrados</span>
         <strong>{{ dashboard.kpis.total_users }}</strong>
       </article>
 
       <article class="stat-card">
-        <span>Actividades creadas</span>
-        <strong>{{ dashboard.kpis.total_activities }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Sesiones registradas</span>
+        <span>Sesiones totales</span>
         <strong>{{ dashboard.kpis.total_sessions }}</strong>
       </article>
 
@@ -36,140 +33,122 @@
         <strong>{{ dashboard.kpis.active_sessions }}</strong>
       </article>
 
-      <article class="stat-card">
-        <span>Horas conectadas</span>
-        <strong>{{ dashboard.kpis.total_connection_hours }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Promedio sesión</span>
-        <strong>{{ dashboard.kpis.avg_connection_minutes }} min</strong>
-      </article>
-    </div>
-
-    <!-- GRÁFICOS -->
-    <div class="dashboard-grid">
-      <article class="form-card chart-card">
-        <p class="eyebrow">Conexiones</p>
-        <h2 class="section-title">Sesiones por día</h2>
-        <div class="chart-wrap">
-          <canvas id="sessionsByDayChart"></canvas>
-        </div>
-      </article>
-
-      <article class="form-card chart-card">
-        <p class="eyebrow">Tiempo</p>
-        <h2 class="section-title">Minutos conectados</h2>
-        <div class="chart-wrap">
-          <canvas id="minutesByDayChart"></canvas>
-        </div>
-      </article>
     </div>
 
     <!-- SESIONES ACTIVAS -->
     <div class="admin-detail-grid">
+
       <article class="form-card admin-sessions-card">
-        <p class="eyebrow">En tiempo real</p>
+
+        <p class="eyebrow">En vivo</p>
         <h2 class="section-title">Usuarios conectados</h2>
 
         {% if dashboard.active_sessions %}
+
           <div class="simple-list">
+
             {% for s in dashboard.active_sessions %}
               <div class="simple-item">
-                <strong>Usuario:</strong> {{ s.user }}<br>
-                <strong>IP:</strong> {{ s.ip }}<br>
-                <strong>Ubicación:</strong> {{ s.city }}, {{ s.country }}<br>
-                <strong>Duración:</strong> {{ (s.duration_seconds // 60) }} min<br>
-                <strong>Login:</strong> {{ s.login_at }}<br>
-                <strong>Agente:</strong> {{ s.user_agent }}
+
+                <strong>Usuario:</strong> {{ s.user }} <br>
+
+                <strong>IP:</strong> {{ s.ip }} <br>
+
+                <strong>Ubicación:</strong> 
+                {{ s.city if s.city else "Desconocido" }},
+                {{ s.country if s.country else "Desconocido" }} <br>
+
+                <strong>Duración:</strong> 
+                {{ (s.duration_seconds // 60) }} min <br>
+
+                <strong>Login:</strong> {{ s.login_at }} <br>
+
+                <strong>Navegador:</strong>
+                {{ s.user_agent }}
+
               </div>
             {% endfor %}
+
           </div>
+
         {% else %}
+
           <div class="simple-item empty">
-            No hay usuarios conectados actualmente.
+            No hay usuarios conectados en este momento
           </div>
+
         {% endif %}
+
       </article>
 
-      <!-- DATOS DEL ADMIN -->
+      <!-- INFO ADMIN -->
       <article class="form-card">
+
         <p class="eyebrow">Administrador</p>
-        <h2 class="section-title">Información de acceso</h2>
+        <h2 class="section-title">Información</h2>
 
         <div class="simple-list">
-          <div class="simple-item">
-            <strong>Nombre:</strong><br>
-            {{ dashboard.admin_data.nombre }}
-          </div>
 
           <div class="simple-item">
             <strong>Usuario:</strong><br>
-            {{ dashboard.admin_data.usuario }}
+            {{ current_user.username }}
           </div>
 
           <div class="simple-item">
             <strong>ID:</strong><br>
-            {{ dashboard.admin_data.id_usuario }}
+            {{ current_user.id }}
           </div>
 
           <div class="simple-item">
             <strong>Rol:</strong><br>
-            {{ dashboard.admin_data.rol }}
+            Admin
           </div>
+
         </div>
+
       </article>
+
+    </div>
+
+    <!-- HISTORIAL DE SESIONES -->
+    <div class="section-heading" style="margin-top: 40px;">
+      <p class="eyebrow">Histórico</p>
+      <h2>Sesiones registradas</h2>
+    </div>
+
+    <div class="form-card">
+
+      {% if dashboard.active_sessions %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>IP</th>
+              <th>Ciudad</th>
+              <th>País</th>
+              <th>Duración</th>
+            </tr>
+          </thead>
+          <tbody>
+
+          {% for s in dashboard.active_sessions %}
+            <tr>
+              <td>{{ s.user }}</td>
+              <td>{{ s.ip }}</td>
+              <td>{{ s.city }}</td>
+              <td>{{ s.country }}</td>
+              <td>{{ (s.duration_seconds // 60) }} min</td>
+            </tr>
+          {% endfor %}
+
+          </tbody>
+        </table>
+      {% else %}
+        <p>No hay registros</p>
+      {% endif %}
+
     </div>
 
   </div>
 </section>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-  const dashboard = {{ dashboard_json | safe }};
-
-  const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false
-  };
-
-  // Gráfico Sesiones
-  const sessionsCanvas = document.getElementById("sessionsByDayChart");
-  if (sessionsCanvas) {
-    new Chart(sessionsCanvas, {
-      type: "bar",
-      data: {
-        labels: dashboard.charts.sessions_by_day.labels,
-        datasets: [{
-          label: "Sesiones",
-          data: dashboard.charts.sessions_by_day.values,
-          backgroundColor: "#c7517d"
-        }]
-      },
-      options: commonOptions
-    });
-  }
-
-  // Gráfico Minutos
-  const minutesCanvas = document.getElementById("minutesByDayChart");
-  if (minutesCanvas) {
-    new Chart(minutesCanvas, {
-      type: "line",
-      data: {
-        labels: dashboard.charts.minutes_by_day.labels,
-        datasets: [{
-          label: "Minutos",
-          data: dashboard.charts.minutes_by_day.values,
-          borderColor: "#a63f66",
-          backgroundColor: "rgba(199, 81, 125, 0.2)",
-          fill: true
-        }]
-      },
-      options: commonOptions
-    });
-  }
-</script>
-
 {% endblock %}
-``
