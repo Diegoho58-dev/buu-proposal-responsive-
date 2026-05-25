@@ -1,18 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Dashboard Administrativo | Sistema{% endblock %}
+{% block title %}Dashboard | Sistema{% endblock %}
 
 {% block content %}
 <section class="section">
   <div class="container">
     <div class="section-heading">
-      <p class="eyebrow">Panel administrativo exclusivo</p>
-      <h1 class="page-title">Dashboard de control</h1>
+      <p class="eyebrow">Panel interno</p>
+      <h1 class="page-title">Dashboard administrativo</h1>
       <p class="hero-text">
-        Monitoreo de sesiones activas, datos de conexión y ubicación de usuarios.
+        Vista resumida del sistema con uso de sesiones y actividad acumulada.
       </p>
     </div>
 
-    <!-- KPIs -->
     <div class="stats-grid">
       <article class="stat-card">
         <span>Usuarios registrados</span>
@@ -20,12 +19,12 @@
       </article>
 
       <article class="stat-card">
-        <span>Sesiones activas</span>
-        <strong style="color: #25D366;">{{ dashboard.kpis.active_sessions }}</strong>
+        <span>Actividades creadas</span>
+        <strong>{{ dashboard.kpis.total_activities }}</strong>
       </article>
 
       <article class="stat-card">
-        <span>Total de sesiones</span>
+        <span>Sesiones registradas</span>
         <strong>{{ dashboard.kpis.total_sessions }}</strong>
       </article>
 
@@ -40,16 +39,15 @@
       </article>
 
       <article class="stat-card">
-        <span>Actividades creadas</span>
-        <strong>{{ dashboard.kpis.total_activities }}</strong>
+        <span>Usuario actual</span>
+        <strong>{{ dashboard.admin_data.usuario }}</strong>
       </article>
     </div>
 
-    <!-- Gráficos -->
     <div class="dashboard-grid">
       <article class="form-card chart-card">
         <p class="eyebrow">Conexiones</p>
-        <h2 class="section-title">Sesiones por día (últimos 7 días)</h2>
+        <h2 class="section-title">Sesiones por día</h2>
         <div class="chart-wrap">
           <canvas id="sessionsByDayChart"></canvas>
         </div>
@@ -64,73 +62,9 @@
       </article>
     </div>
 
-    <!-- Tabla de Sesiones Activas -->
-    <article class="form-card">
-      <p class="eyebrow">Monitoreo en tiempo real</p>
-      <h2 class="section-title">Usuarios conectados ahora</h2>
-      
-      {% if dashboard.active_sessions %}
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Dirección IP</th>
-                <th>País</th>
-                <th>Ciudad</th>
-                <th>Ubicación (Lat/Long)</th>
-                <th>Conectado desde</th>
-                <th>Duración</th>
-                <th>Navegador</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for sess in dashboard.active_sessions %}
-                <tr class="active-session-row">
-                  <td>
-                    <strong>{{ sess.user }}</strong>
-                  </td>
-                  <td>
-                    <code class="ip-code">{{ sess.ip }}</code>
-                  </td>
-                  <td>
-                    <span class="location-badge">{{ sess.country }}</span>
-                  </td>
-                  <td>
-                    <span class="location-badge">{{ sess.city }}</span>
-                  </td>
-                  <td>
-                    {% if sess.latitude and sess.longitude %}
-                      <code class="coords-code">{{ "%.4f"|format(sess.latitude) }}, {{ "%.4f"|format(sess.longitude) }}</code>
-                    {% else %}
-                      <span class="text-muted">No disponible</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <small>{{ (sess.login_at | colombia_time).strftime("%H:%M:%S") }}</small>
-                  </td>
-                  <td>
-                    <strong class="duration-badge">{{ (sess.duration_seconds // 60) }}m {{ (sess.duration_seconds % 60) }}s</strong>
-                  </td>
-                  <td>
-                    <small class="user-agent-text">{{ sess.user_agent[:40] }}...</small>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <div class="empty-card">
-          <p>No hay usuarios conectados en este momento.</p>
-        </div>
-      {% endif %}
-    </article>
-
-    <!-- Datos del Administrador -->
     <div class="admin-detail-grid">
       <article class="form-card">
-        <p class="eyebrow">Perfil administrativo</p>
+        <p class="eyebrow">Usuario</p>
         <h2 class="section-title">Datos de acceso</h2>
 
         <div class="simple-list">
@@ -151,7 +85,7 @@
 
           <div class="simple-item">
             <strong>Rol</strong><br>
-            <span class="admin-badge">{{ dashboard.admin_data.rol }}</span>
+            {{ dashboard.admin_data.rol }}
           </div>
         </div>
       </article>
@@ -195,7 +129,7 @@
         datasets: [{
           label: "Sesiones",
           data: dashboard.charts.sessions_by_day.values,
-          backgroundColor: "#25D366",
+          backgroundColor: "#c7517d",
           borderRadius: 10,
           borderSkipped: false
         }]
@@ -226,13 +160,12 @@
         datasets: [{
           label: "Minutos conectados",
           data: dashboard.charts.minutes_by_day.values,
-          borderColor: "#c7517d",
+          borderColor: "#a63f66",
           backgroundColor: "rgba(199, 81, 125, 0.15)",
           fill: true,
           tension: 0.35,
           pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: "#c7517d"
+          pointHoverRadius: 6
         }]
       },
       options: {
@@ -251,78 +184,5 @@
       }
     });
   }
-
-  // Auto-refresh cada 30 segundos
-  setTimeout(() => {
-    location.reload();
-  }, 30000);
 </script>
-
-<style>
-  .active-session-row {
-    background: linear-gradient(90deg, rgba(37, 211, 102, 0.05), transparent);
-    border-left: 3px solid #25D366;
-  }
-
-  .ip-code {
-    background: #f0f0f0;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.85rem;
-    color: #2a1f23;
-  }
-
-  .coords-code {
-    background: #f0f0f0;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    color: #2a1f23;
-  }
-
-  .location-badge {
-    display: inline-block;
-    background: rgba(37, 211, 102, 0.15);
-    color: #25D366;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .duration-badge {
-    display: inline-block;
-    background: rgba(199, 81, 125, 0.15);
-    color: #c7517d;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-  }
-
-  .admin-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #25D366, #20BA5A);
-    color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .user-agent-text {
-    color: #7a6670;
-    font-family: 'Courier New', monospace;
-  }
-
-  .text-muted {
-    color: #9b8a92;
-  }
-
-  .chart-wrap {
-    height: 300px;
-    margin-top: 16px;
-  }
-</style>
 {% endblock %}
