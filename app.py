@@ -484,7 +484,7 @@ def admin_dashboard():
         "active_sessions": active_sessions_data
     }
     
-    return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
+    return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard, default=str))
 
 with app.app_context():
     db.create_all()
