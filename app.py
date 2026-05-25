@@ -174,15 +174,17 @@ def ensure_session_columns():
     except Exception as e:
         print("ERROR AGREGANDO COLUMNAS DE UBICACIÓN:", e)
 
+
 def assign_admin_by_id():
     try:
-        admin_user = User.query.get(ADMIN_USER_ID)
-        if admin_user and not admin_user.is_admin:
-            admin_user.is_admin = True
+        user = User.query.get(ADMIN_USER_ID)
+        if user:
+            user.is_admin = True   # ✅ siempre lo fuerza
             db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print("ERROR ASIGNANDO ADMIN POR ID:", e)
+        print("ERROR:", e)
+
 
 def start_user_session(user):
     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
