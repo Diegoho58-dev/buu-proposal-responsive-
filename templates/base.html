@@ -2,63 +2,35 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Jenny & Diego{% endblock %}</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <title>Jenny & Diego</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
-  <header class="site-header">
-    <nav class="nav container">
-      <a class="brand" href="{{ url_for('home') }}">Jenny & Diego</a>
 
-      <div class="nav-links">
-        <a href="{{ url_for('home') }}">Inicio</a>
+<nav>
+  <a href="{{ url_for('home') }}">Inicio</a>
 
-        {% if current_user.is_authenticated %}
-          <a href="{{ url_for('wall') }}">Mensajes</a>
-          <a href="{{ url_for('note') }}">Carta</a>
-          <a href="{{ url_for('activities') }}">Actividades</a>
-          {% if current_user.id == 2 and current_user.is_admin %}
-            <a href="{{ url_for('admin_dashboard') }}" style="color: #25D366; font-weight: 600;">🔐 Control</a>
-          {% endif %}
-          <span class="user-pill">Hola, {{ current_user.username }}</span>
-          <a href="{{ url_for('logout') }}">Salir</a>
-        {% else %}
-          <a href="{{ url_for('login') }}">Entrar</a>
-          <a href="{{ url_for('register') }}">Crear cuenta</a>
-        {% endif %}
-      </div>
-    </nav>
-  </header>
+  {% if current_user.is_authenticated %}
+    <a href="{{ url_for('logout') }}">Salir</a>
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <section class="flash-wrap container">
-        {% for message in messages %}
-          <div class="flash-message">{{ message }}</div>
-        {% endfor %}
-      </section>
+    {% if current_user.is_admin %}
+      <a href="{{ url_for('admin_dashboard') }}">🔐 Control</a>
     {% endif %}
-  {% endwith %}
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+  {% else %}
+    <a href="{{ url_for('login') }}">Login</a>
+  {% endif %}
+</nav>
 
-  <footer class="site-footer">
-    <div class="container footer-content">
-      <div class="footer-left">
-        <p class="footer-name">Diego Armando Hoyos Dorado</p>
-        <p class="footer-rights">© 2026 Todos los derechos reservados.</p>
-      </div>
-    </div>
-  </footer>
+{% with messages = get_flashed_messages() %}
+  {% for message in messages %}
+    <p>{{ message }}</p>
+  {% endfor %}
+{% endwith %}
 
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% block content %}{% endblock %}
+
 </body>
 </html>
+``
