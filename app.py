@@ -54,6 +54,12 @@ def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
         return ""
     return dt.strftime(fmt)
 
+@app.before_request
+def ensure_session():
+    if current_user.is_authenticated and "active_session_id" not in session:
+        start_user_session(current_user)
+
+
 class User(UserMixin, db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
