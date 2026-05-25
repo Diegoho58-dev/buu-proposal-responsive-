@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Mensajes | Jenny & Diego{% endblock %}
+
+{% block content %}
+<section class="section chat-section">
+  <div class="container chat-container">
+    <!-- Chat Window -->
+    <div class="chat-window">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <h2 class="chat-title">{{ partner.username if partner else 'Chat' }}</h2>
+          <p class="chat-subtitle">{{ current_user.username }}</p>
+        </div>
+      </div>
+
+      <!-- Messages Area with Scroll -->
+      <div class="chat-messages" id="messagesContainer">
+        {% if messages %}
+          <!-- Load More Button -->
+          {% if has_more %}
+            <div class="load-more-container">
+              <a href="{{ url_for('wall', offset=next_offset) }}" class="load-more-btn">
+                ↑ Cargar mensajes anteriores
+              </a>
+            </div>
+          {% endif %}
+
+          <!-- Messages Grouped by Date -->
+          {% set current_date = None %}
+          {% for message in messages %}
+            {% set msg_date = (message.created_at | colombia_time).date() %}
+            {% set today = now | colombia_time %}
+            {% set today_date = today.date() %}
+            {% set yesterday_date = (today - timedelta(days=1)).date() %}
+
+            <!-- Date Separator -->
+            {% if msg_date != current_date %}
+              {% set current_date = msg_date %}
+              <div class="date-separator">
+                <span class="date-label">
+                  {% if msg_date == today_date %}
+                    Hoy
+                  {% elif msg_date == yesterday_date %}
+                    Ayer
+                  {% else %}
+                    {{ msg_date.strftime("%d de %B") }}
+                  {% endif %}
+                </span>
+              </div>
+            {% endif %}
+
+            <!-- Message -->
+            <div class="message-wrapper {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+              <div class="message-bubble">
+                <p class="message-text">{{ message.content }}</p>
+                <span class="message-time">{{ (message.created_at | colombia_time).strftime("%H:%M") }}</span>
+              </div>
+              {% if message.sender_id == current_user.id %}
+                <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}" class="message-delete-form">
+                  <button type="submit" class="message-delete-btn" title="Eliminar">×</button>
+                </form>
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="chat-empty">
+            <p class="chat-empty-icon">💬</p>
+            <h3>Aún no hay mensajes</h3>
+            <p>Escribe el primero para empezar este chat.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Input Area -->
+      {% if partner %}
+        <form method="POST" class="chat-input-form">
+          <textarea 
+            id="content" 
+            name="content" 
+            class="chat-input" 
+            placeholder="Escribe tu mensaje..." 
+            required
+            rows="1"
+          ></textarea>
+          <button type="submit" class="chat-send-btn">
+            <span class="send-icon">➤</span>
+          </button>
+        </form>
+      {% else %}
+        <div class="chat-unavailable">
+          <p>Chat no disponible</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<script>
+  // Auto-scroll to bottom on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('messagesContainer');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  });
+
+  // Auto-expand textarea
+  const textarea = document.getElementById('content');
+  if (textarea) {
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Reset on form submit
+    const form = document.querySelector('.chat-input-form');
+    if (form) {
+      form.addEventListener('submit', function() {
+        setTimeout(() => {
+          textarea.style.height = 'auto';
+        }, 100);
+      });
+    }
+  }
+</script>
+{% endblock %}
