@@ -74,8 +74,8 @@ class UserSession(db.Model):
     duration_seconds = db.Column(db.Integer, nullable=True)
     ip_address = db.Column(db.String(80), nullable=True)
     user_agent = db.Column(db.String(500), nullable=True)
-    country = db.Column(db.String(100), nullable=True)
-    city = db.Column(db.String(100), nullable=True)
+    country = db.Column(db.String(100), nullable=True, default="Desconocido")
+    city = db.Column(db.String(100), nullable=True, default="Desconocido")
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
 
@@ -129,39 +129,44 @@ def get_chat_partner():
         return User.query.get(2)
     return None
 
-def ensure_admin_column():
+def safe_add_column(table_name, column_name, column_type):
+    """Añade una columna de forma segura sin generar errores"""
     try:
         with db.engine.connect() as connection:
-            connection.exec_driver_sql('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE')
+            if "user_session" in table_name:
+                sql = f'ALTER TABLE "{table_name}" ADD COLUMN IF NOT EXISTS "{column_name}" {column_type}'
+            else:
+                sql = f'ALTER TABLE "{table_name}" ADD COLUMN IF NOT EXISTS "{column_name}" {column_type}'
+            connection.exec_driver_sql(sql)
             connection.commit()
     except Exception as e:
-        print(f"INFO: Columna is_admin ya existe o error: {e}")
+        pass
+
+def ensure_admin_column():
+    """Asegura que la columna is_admin exista"""
+    safe_add_column("user", "is_admin", "BOOLEAN DEFAULT FALSE")
 
 def ensure_session_columns():
-    """Asegura que las columnas de ubicación existan"""
-    try:
-        with db.engine.connect() as connection:
-            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500)')
-            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS country VARCHAR(100)')
-            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS city VARCHAR(100)')
-            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS latitude FLOAT')
-            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS longitude FLOAT')
-            connection.commit()
-    except Exception as e:
-        print(f"INFO: Columnas de ubicación ya existen o error: {e}")
+    """Asegura que todas las columnas de sesión existan"""
+    safe_add_column("user_session", "user_agent", "VARCHAR(500)")
+    safe_add_column("user_session", "country", "VARCHAR(100)")
+    safe_add_column("user_session", "city", "VARCHAR(100)")
+    safe_add_column("user_session", "latitude", "FLOAT")
+    safe_add_column("user_session", "longitude", "FLOAT")
 
 def assign_admin_by_id():
+    """Asigna el rol de administrador a Diego (ID 2)"""
     try:
         admin_user = User.query.get(ADMIN_USER_ID)
-        if admin_user and not admin_user.is_admin:
-            admin_user.is_admin = True
-            db.session.commit()
-            print(f"Usuario ID {ADMIN_USER_ID} marcado como administrador.")
+        if admin_user:
+            if not admin_user.is_admin:
+                admin_user.is_admin = True
+                db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print(f"INFO: Error asignando admin: {e}")
 
 def start_user_session(user):
+    """Inicia una sesión de usuario"""
     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
     user_agent = request.headers.get("User-Agent", "Desconocido")
     
@@ -171,15 +176,14 @@ def start_user_session(user):
         ip_address=ip_address,
         user_agent=user_agent,
         country="Desconocido",
-        city="Desconocido",
-        latitude=None,
-        longitude=None
+        city="Desconocido"
     )
     db.session.add(new_session)
     db.session.commit()
     session["active_session_id"] = new_session.id
 
 def end_user_session():
+    """Finaliza la sesión de usuario"""
     active_session_id = session.get("active_session_id")
     if not active_session_id:
         return
@@ -191,7 +195,7 @@ def end_user_session():
     session.pop("active_session_id", None)
 
 def admin_required(f):
-    """Decorador para verificar que SOLO Diego (ID 2) puede acceder al panel administrativo"""
+    """Decorador para verificar que SOLO Diego (ID 2) puede acceder"""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -206,7 +210,7 @@ def admin_required(f):
 def home():
     try:
         latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
-    except Exception as e:
+    except:
         latest_messages = []
     return render_template("home.html", latest_messages=latest_messages)
 
@@ -390,74 +394,69 @@ def add_sale(activity_id):
 @login_required
 @admin_required
 def admin_dashboard():
-    try:
-        total_users = User.query.count()
-        total_activities = Activity.query.count()
-        total_sessions = UserSession.query.count()
-        
-        active_sessions = UserSession.query.filter(UserSession.logout_at.is_(None)).all()
-        
-        completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
-        total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
-        avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
-        
-        now = datetime.utcnow()
-        start_range = now - timedelta(days=6)
-        sessions_last_7 = UserSession.query.filter(UserSession.login_at >= start_range).all()
-        
-        sessions_by_day = {}
-        minutes_by_day = {}
-        for i in range(7):
-            day = (start_range + timedelta(days=i)).date()
-            key = day.strftime("%d/%m")
-            sessions_by_day[key] = 0
-            minutes_by_day[key] = 0
-        
-        for s in sessions_last_7:
-            day_key = s.login_at.date().strftime("%d/%m")
-            if day_key in sessions_by_day:
-                sessions_by_day[day_key] += 1
-            if s.duration_seconds:
-                minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
-        
-        active_sessions_data = []
-        for sess in active_sessions:
-            user = User.query.get(sess.user_id)
-            duration = int((datetime.utcnow() - sess.login_at).total_seconds())
-            active_sessions_data.append({
-                "user": user.username if user else "Desconocido",
-                "ip": sess.ip_address or "No disponible",
-                "country": sess.country or "Desconocido",
-                "city": sess.city or "Desconocido",
-                "latitude": sess.latitude,
-                "longitude": sess.longitude,
-                "login_at": sess.login_at,
-                "duration_seconds": duration,
-                "user_agent": sess.user_agent or "Desconocido"
-            })
-        
-        dashboard = {
-            "kpis": {
-                "total_users": total_users,
-                "total_activities": total_activities,
-                "total_sessions": total_sessions,
-                "active_sessions": len(active_sessions),
-                "total_connection_hours": round(total_connection_seconds / 3600, 2),
-                "avg_connection_minutes": round(avg_connection_seconds / 60, 2)
-            },
-            "charts": {
-                "sessions_by_day": {"labels": list(sessions_by_day.keys()), "values": list(sessions_by_day.values())},
-                "minutes_by_day": {"labels": list(minutes_by_day.keys()), "values": list(minutes_by_day.values())}
-            },
-            "admin_data": {"nombre": current_user.username, "usuario": current_user.username, "rol": "Administrador", "id_usuario": current_user.id},
-            "active_sessions": active_sessions_data
-        }
-        
-        return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
-    except Exception as e:
-        print(f"ERROR en admin_dashboard: {e}")
-        flash("Error al cargar el dashboard administrativo.")
-        return redirect(url_for("home"))
+    total_users = User.query.count()
+    total_activities = Activity.query.count()
+    total_sessions = UserSession.query.count()
+    
+    active_sessions = UserSession.query.filter(UserSession.logout_at.is_(None)).all()
+    
+    completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
+    total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
+    avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
+    
+    now = datetime.utcnow()
+    start_range = now - timedelta(days=6)
+    sessions_last_7 = UserSession.query.filter(UserSession.login_at >= start_range).all()
+    
+    sessions_by_day = {}
+    minutes_by_day = {}
+    for i in range(7):
+        day = (start_range + timedelta(days=i)).date()
+        key = day.strftime("%d/%m")
+        sessions_by_day[key] = 0
+        minutes_by_day[key] = 0
+    
+    for s in sessions_last_7:
+        day_key = s.login_at.date().strftime("%d/%m")
+        if day_key in sessions_by_day:
+            sessions_by_day[day_key] += 1
+        if s.duration_seconds:
+            minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
+    
+    active_sessions_data = []
+    for sess in active_sessions:
+        user = User.query.get(sess.user_id)
+        duration = int((datetime.utcnow() - sess.login_at).total_seconds())
+        active_sessions_data.append({
+            "user": user.username if user else "Desconocido",
+            "ip": sess.ip_address or "No disponible",
+            "country": sess.country or "Desconocido",
+            "city": sess.city or "Desconocido",
+            "latitude": sess.latitude,
+            "longitude": sess.longitude,
+            "login_at": sess.login_at,
+            "duration_seconds": duration,
+            "user_agent": sess.user_agent or "Desconocido"
+        })
+    
+    dashboard = {
+        "kpis": {
+            "total_users": total_users,
+            "total_activities": total_activities,
+            "total_sessions": total_sessions,
+            "active_sessions": len(active_sessions),
+            "total_connection_hours": round(total_connection_seconds / 3600, 2),
+            "avg_connection_minutes": round(avg_connection_seconds / 60, 2)
+        },
+        "charts": {
+            "sessions_by_day": {"labels": list(sessions_by_day.keys()), "values": list(sessions_by_day.values())},
+            "minutes_by_day": {"labels": list(minutes_by_day.keys()), "values": list(minutes_by_day.values())}
+        },
+        "admin_data": {"nombre": current_user.username, "usuario": current_user.username, "rol": "Administrador", "id_usuario": current_user.id},
+        "active_sessions": active_sessions_data
+    }
+    
+    return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
 
 with app.app_context():
     db.create_all()
