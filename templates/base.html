@@ -13,7 +13,7 @@
 <header class="site-header">
   <nav class="nav container">
 
-    <a class="brand" href="{{ url_for('home') }}">
+    <a href="{{ url_for('home') }}" class="brand">
       Jenny & Diego
     </a>
 
@@ -65,10 +65,14 @@
 
 <footer class="site-footer">
   <div class="container footer-content">
-    <p>© 2026 Diego</p>
+    <div class="footer-left">
+      <p class="footer-name">Diego Armando Hoyos Dorado</p>
+      <p class="footer-rights">© 2026 Todos los derechos reservados.</p>
+    </div>
   </div>
 </footer>
 
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+
 </body>
 </html>
-``
