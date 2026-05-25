@@ -3,8 +3,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import json
 import os
+import requests
 
 app = Flask(__name__)
 
@@ -26,6 +28,9 @@ login_manager = LoginManager()
 login_manager.login_view = "login"
 login_manager.init_app(app)
 
+COLOMBIA_TZ = ZoneInfo("America/Bogota")
+UTC_TZ = ZoneInfo("UTC")
+
 ADMIN_USER_ID = 2
 
 @app.context_processor
@@ -34,6 +39,14 @@ def inject_globals():
         'now': datetime.now(),
         'timedelta': timedelta
     }
+
+@app.template_filter("colombia_time")
+def colombia_time(dt):
+    if dt is None:
+        return ""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC_TZ)
+    return dt.astimezone(COLOMBIA_TZ)
 
 @app.template_filter("datetime_format")
 def datetime_format(dt, fmt="%d/%m/%Y %H:%M"):
@@ -117,44 +130,74 @@ def get_chat_partner():
         return User.query.get(2)
     return None
 
-def safe_add_column(table_name, column_name, column_type):
+def get_location_from_ip(ip_address):
+    """Obtiene ubicación aproximada basada en la IP"""
+    try:
+        response = requests.get(f"https://ipapi.co/{ip_address}/json/", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "country": data.get("country_name", "Desconocido"),
+                "city": data.get("city", "Desconocido"),
+                "latitude": data.get("latitude"),
+                "longitude": data.get("longitude"),
+                "isp": data.get("org", "Desconocido")
+            }
+    except Exception as e:
+        print(f"Error obteniendo ubicación: {e}")
+    return {
+        "country": "Desconocido",
+        "city": "Desconocido",
+        "latitude": None,
+        "longitude": None,
+        "isp": "Desconocido"
+    }
+
+def ensure_admin_column():
     try:
         with db.engine.connect() as connection:
-            sql = f'ALTER TABLE "{table_name}" ADD COLUMN IF NOT EXISTS "{column_name}" {column_type}'
-            connection.exec_driver_sql(sql)
+            connection.exec_driver_sql('ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE')
             connection.commit()
-    except:
-        pass
-
-def init_db():
-    try:
-        with db.app.app_context():
-            db.create_all()
-            safe_add_column("user", "is_admin", "BOOLEAN DEFAULT FALSE")
-            safe_add_column("user_session", "user_agent", "VARCHAR(500)")
-            safe_add_column("user_session", "country", "VARCHAR(100)")
-            safe_add_column("user_session", "city", "VARCHAR(100)")
-            safe_add_column("user_session", "latitude", "FLOAT")
-            safe_add_column("user_session", "longitude", "FLOAT")
-            
-            admin_user = User.query.get(ADMIN_USER_ID)
-            if admin_user and not admin_user.is_admin:
-                admin_user.is_admin = True
-                db.session.commit()
     except Exception as e:
-        print(f"Error en init_db: {e}")
+        print("ERROR AGREGANDO is_admin:", e)
+
+def ensure_session_columns():
+    """Asegura que las columnas de ubicación existan"""
+    try:
+        with db.engine.connect() as connection:
+            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS user_agent VARCHAR(500)')
+            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS country VARCHAR(100)')
+            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS city VARCHAR(100)')
+            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS latitude FLOAT')
+            connection.exec_driver_sql('ALTER TABLE "user_session" ADD COLUMN IF NOT EXISTS longitude FLOAT')
+            connection.commit()
+    except Exception as e:
+        print("ERROR AGREGANDO COLUMNAS DE UBICACIÓN:", e)
+
+def assign_admin_by_id():
+    try:
+        admin_user = User.query.get(ADMIN_USER_ID)
+        if admin_user and not admin_user.is_admin:
+            admin_user.is_admin = True
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print("ERROR ASIGNANDO ADMIN POR ID:", e)
 
 def start_user_session(user):
     ip_address = request.headers.get("X-Forwarded-For", request.remote_addr)
     user_agent = request.headers.get("User-Agent", "Desconocido")
+    location = get_location_from_ip(ip_address)
     
     new_session = UserSession(
         user_id=user.id,
         login_at=datetime.utcnow(),
         ip_address=ip_address,
         user_agent=user_agent,
-        country="Desconocido",
-        city="Desconocido"
+        country=location["country"],
+        city=location["city"],
+        latitude=location["latitude"],
+        longitude=location["longitude"]
     )
     db.session.add(new_session)
     db.session.commit()
@@ -172,11 +215,14 @@ def end_user_session():
     session.pop("active_session_id", None)
 
 def admin_required(f):
+    """Decorador para verificar que SOLO Diego (ID 2) puede acceder al panel administrativo"""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Verificar que el usuario está autenticado
         if not current_user.is_authenticated:
             abort(403)
+        # Verificar que es Diego (ID 2) y es administrador
         if current_user.id != ADMIN_USER_ID or not current_user.is_admin:
             abort(403)
         return f(*args, **kwargs)
@@ -186,7 +232,7 @@ def admin_required(f):
 def home():
     try:
         latest_messages = Message.query.order_by(Message.created_at.desc()).limit(6).all()
-    except:
+    except Exception as e:
         latest_messages = []
     return render_template("home.html", latest_messages=latest_messages)
 
@@ -374,12 +420,15 @@ def admin_dashboard():
     total_activities = Activity.query.count()
     total_sessions = UserSession.query.count()
     
+    # Sesiones activas (sin logout_at)
     active_sessions = UserSession.query.filter(UserSession.logout_at.is_(None)).all()
     
+    # Sesiones completadas
     completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
     total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
     avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
     
+    # Datos de gráficos
     now = datetime.utcnow()
     start_range = now - timedelta(days=6)
     sessions_last_7 = UserSession.query.filter(UserSession.login_at >= start_range).all()
@@ -399,20 +448,21 @@ def admin_dashboard():
         if s.duration_seconds:
             minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
     
+    # Preparar datos de sesiones activas para la tabla
     active_sessions_data = []
     for sess in active_sessions:
         user = User.query.get(sess.user_id)
         duration = int((datetime.utcnow() - sess.login_at).total_seconds())
         active_sessions_data.append({
             "user": user.username if user else "Desconocido",
-            "ip": sess.ip_address or "No disponible",
-            "country": sess.country or "Desconocido",
-            "city": sess.city or "Desconocido",
+            "ip": sess.ip_address,
+            "country": sess.country,
+            "city": sess.city,
             "latitude": sess.latitude,
             "longitude": sess.longitude,
             "login_at": sess.login_at,
             "duration_seconds": duration,
-            "user_agent": sess.user_agent or "Desconocido"
+            "user_agent": sess.user_agent
         })
     
     dashboard = {
@@ -434,7 +484,11 @@ def admin_dashboard():
     
     return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
 
-init_db()
+with app.app_context():
+    db.create_all()
+    ensure_admin_column()
+    ensure_session_columns()
+    assign_admin_by_id()
 
 if __name__ == "__main__":
     app.run(debug=True)
