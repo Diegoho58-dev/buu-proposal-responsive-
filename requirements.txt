@@ -5,3 +5,10 @@ psycopg2-binary
 gunicorn
 requests
 pytz
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-Cors
+gunicorn
+psycopg2-binary
+requests
