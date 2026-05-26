@@ -4,8 +4,8 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from sqlalchemy.exc import SQLAlchemyError
 import json
+from sqlalchemy.exc import SQLAlchemyError
 import os
 import requests
 
