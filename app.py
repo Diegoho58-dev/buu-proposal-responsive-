@@ -9,9 +9,10 @@ import json
 from sqlalchemy.exc import SQLAlchemyError
 import os
 import requests
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "clave_super_segura")
 
 database_url = os.getenv("DATABASE_URL")
@@ -545,6 +546,73 @@ with app.app_context():
     ensure_admin_column()
     ensure_session_columns()
     assign_admin_by_id()
+
+# =====================================================
+# 📱 API PARA APP MOVIL (NO AFECTA LA WEB)
+# =====================================================
+
+@app.route("/api/messages", methods=["GET"])
+def api_get_messages():
+    sender_id = request.args.get("sender_id", type=int)
+    receiver_id = request.args.get("receiver_id", type=int)
+
+    if not sender_id or not receiver_id:
+        return jsonify({"error": "faltan datos"}), 400
+
+    try:
+        messages = Message.query.filter(
+            ((Message.sender_id == sender_id) & (Message.receiver_id == receiver_id)) |
+            ((Message.sender_id == receiver_id) & (Message.receiver_id == sender_id))
+        ).order_by(Message.created_at.asc()).all()
+
+        return jsonify([
+            {
+                "id": m.id,
+                "content": m.content,
+                "sender_id": m.sender_id,
+                "receiver_id": m.receiver_id,
+                "timestamp": m.created_at.isoformat() if m.created_at else None
+            }
+            for m in messages
+        ])
+
+    except Exception as e:
+        return jsonify({"error": "error obteniendo mensajes"}), 500
+
+
+@app.route("/api/messages", methods=["POST"])
+def api_send_message():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "sin datos"}), 400
+
+    if not all(k in data for k in ("sender_id", "receiver_id", "content")):
+        return jsonify({"error": "datos incompletos"}), 400
+
+    try:
+        new_message = Message(
+            content=data["content"].strip(),
+            user_id=data["sender_id"],
+            sender_id=data["sender_id"],
+            receiver_id=data["receiver_id"],
+            created_at=datetime.utcnow()
+        )
+
+        db.session.add(new_message)
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "error guardando mensaje"}), 500
+
+
+@app.route("/api/health")
+def api_health():
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
     app.run(debug=True)
