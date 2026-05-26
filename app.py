@@ -452,18 +452,13 @@ def admin_dashboard():
     total_activities = Activity.query.count()
     total_sessions = UserSession.query.count()
     
-    # Sesiones activas (sin logout_at)
     active_sessions = UserSession.query.filter(UserSession.logout_at.is_(None)).order_by(UserSession.login_at.desc()).all()
-    
-    # Historial de sesiones (últimas 20 terminadas)
     session_history = UserSession.query.filter(UserSession.logout_at.isnot(None)).order_by(UserSession.logout_at.desc()).limit(20).all()
     
-    # Sesiones completadas para estadísticas
     completed_sessions = UserSession.query.filter(UserSession.duration_seconds.isnot(None)).all()
     total_connection_seconds = sum(s.duration_seconds for s in completed_sessions if s.duration_seconds)
     avg_connection_seconds = int(total_connection_seconds / len(completed_sessions)) if completed_sessions else 0
     
-    # Datos de gráficos (últimos 7 días)
     now = datetime.utcnow()
     start_range = now - timedelta(days=6)
     sessions_last_7 = UserSession.query.filter(UserSession.login_at >= start_range).all()
@@ -483,7 +478,6 @@ def admin_dashboard():
         if s.duration_seconds:
             minutes_by_day[day_key] += round(s.duration_seconds / 60, 2)
     
-    # Preparar datos de sesiones activas
     active_sessions_data = []
     for sess in active_sessions:
         user = User.query.get(sess.user_id)
@@ -493,12 +487,11 @@ def admin_dashboard():
             "ip": sess.ip_address,
             "country": sess.country,
             "city": sess.city,
-            "login_at": to_local(sess.login_at),   # convertido a hora local
+            "login_at": to_local(sess.login_at),
             "duration_seconds": duration,
             "user_agent": sess.user_agent
         })
 
-    # Preparar historial de sesiones
     history_data = []
     for sess in session_history:
         user = User.query.get(sess.user_id)
@@ -507,8 +500,8 @@ def admin_dashboard():
             "ip": sess.ip_address,
             "country": sess.country,
             "city": sess.city,
-            "login_at": to_local(sess.login_at),   # convertido a hora local
-            "logout_at": to_local(sess.logout_at), # convertido a hora local
+            "login_at": to_local(sess.login_at),
+            "logout_at": to_local(sess.logout_at),
             "duration_seconds": sess.duration_seconds
         })
     
@@ -535,7 +528,6 @@ def admin_dashboard():
         "history": history_data
     }
 
-    # Serializador para datetime
     def custom_serializer(obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
