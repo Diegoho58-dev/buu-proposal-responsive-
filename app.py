@@ -440,6 +440,14 @@ def add_sale(activity_id):
 @login_required
 @admin_required
 def admin_dashboard():
+    # Definir zona horaria local
+    local_tz = pytz.timezone("America/Bogota")
+
+    def to_local(dt):
+        if dt is None:
+            return None
+        return dt.astimezone(local_tz)
+
     total_users = User.query.count()
     total_activities = Activity.query.count()
     total_sessions = UserSession.query.count()
@@ -485,7 +493,7 @@ def admin_dashboard():
             "ip": sess.ip_address,
             "country": sess.country,
             "city": sess.city,
-            "login_at": sess.login_at,
+            "login_at": to_local(sess.login_at),   # convertido a hora local
             "duration_seconds": duration,
             "user_agent": sess.user_agent
         })
@@ -499,8 +507,8 @@ def admin_dashboard():
             "ip": sess.ip_address,
             "country": sess.country,
             "city": sess.city,
-            "login_at": sess.login_at,
-            "logout_at": sess.logout_at,
+            "login_at": to_local(sess.login_at),   # convertido a hora local
+            "logout_at": to_local(sess.logout_at), # convertido a hora local
             "duration_seconds": sess.duration_seconds
         })
     
@@ -547,4 +555,3 @@ with app.app_context():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
