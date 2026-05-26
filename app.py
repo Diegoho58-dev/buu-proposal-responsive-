@@ -517,12 +517,27 @@ def admin_dashboard():
             "sessions_by_day": {"labels": list(sessions_by_day.keys()), "values": list(sessions_by_day.values())},
             "minutes_by_day": {"labels": list(minutes_by_day.keys()), "values": list(minutes_by_day.values())}
         },
-        "admin_data": {"nombre": current_user.username, "usuario": current_user.username, "rol": "Administrador", "id_usuario": current_user.id},
+        "admin_data": {
+            "nombre": current_user.username,
+            "usuario": current_user.username,
+            "rol": "Administrador",
+            "id_usuario": current_user.id
+        },
         "active_sessions": active_sessions_data,
         "history": history_data
     }
-    
-    return render_template("admin.html", dashboard=dashboard_data, dashboard_json=json.dumps(dashboard_data, default=custom_serializer))
+
+    # Serializador para datetime
+    def custom_serializer(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError("Type not serializable")
+
+    return render_template(
+        "admin.html",
+        dashboard=dashboard,
+        dashboard_json=json.dumps(dashboard, default=custom_serializer)
+    )
 
 with app.app_context():
     db.create_all()
@@ -532,5 +547,4 @@ with app.app_context():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
 
