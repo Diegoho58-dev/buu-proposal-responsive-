@@ -4,6 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from sqlalchemy.exc import SQLAlchemyError
 import json
 import os
 import requests
@@ -521,7 +522,7 @@ def admin_dashboard():
         "history": history_data
     }
     
-    return render_template("admin.html", dashboard=dashboard, dashboard_json=json.dumps(dashboard))
+    return render_template("admin.html", dashboard=dashboard_data, dashboard_json=json.dumps(dashboard_data, default=custom_serializer))
 
 with app.app_context():
     db.create_all()
