@@ -1,154 +1,73 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard | Sistema{% endblock %}
-
 {% block content %}
 <section class="section">
   <div class="container">
-
-    <!-- HEADER -->
     <div class="section-heading">
       <p class="eyebrow">Panel interno</p>
       <h1 class="page-title">Dashboard administrativo</h1>
-      <p class="hero-text">
-        Información en tiempo real del sistema, sesiones y actividad.
-      </p>
+      <p class="hero-text">Información en tiempo real del sistema, sesiones y actividad.</p>
     </div>
-
-    <!-- KPIs -->
     <div class="stats-grid">
-
-      <article class="stat-card">
-        <span>Usuarios registrados</span>
-        <strong>{{ dashboard.kpis.total_users }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Sesiones totales</span>
-        <strong>{{ dashboard.kpis.total_sessions }}</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Sesiones activas</span>
-        <strong>{{ dashboard.kpis.active_sessions }}</strong>
-      </article>
-
+      <article class="stat-card"><span>Usuarios</span><strong>{{ dashboard.kpis.total_users }}</strong></article>
+      <article class="stat-card"><span>Sesiones</span><strong>{{ dashboard.kpis.total_sessions }}</strong></article>
+      <article class="stat-card"><span>Activas</span><strong>{{ dashboard.kpis.active_sessions }}</strong></article>
+      <article class="stat-card"><span>Horas Conexión</span><strong>{{ dashboard.kpis.total_connection_hours }}h</strong></article>
     </div>
-
-    <!-- SESIONES ACTIVAS -->
     <div class="admin-detail-grid">
-
       <article class="form-card admin-sessions-card">
-
         <p class="eyebrow">En vivo</p>
         <h2 class="section-title">Usuarios conectados</h2>
-
         {% if dashboard.active_sessions %}
-
           <div class="simple-list">
-
             {% for s in dashboard.active_sessions %}
               <div class="simple-item">
+                <strong>Usuario:</strong> {{ s.user }} | <strong>IP:</strong> {{ s.ip }}  
 
-                <strong>Usuario:</strong> {{ s.user }} <br>
+                <strong>Ubicación:</strong> {{ s.city }}, {{ s.country }}  
 
-                <strong>IP:</strong> {{ s.ip }} <br>
-
-                <strong>Ubicación:</strong> 
-                {{ s.city if s.city else "Desconocido" }},
-                {{ s.country if s.country else "Desconocido" }} <br>
-
-                <strong>Duración:</strong> 
-                {{ (s.duration_seconds // 60) }} min <br>
-
-                <strong>Login:</strong> {{ s.login_at }} <br>
-
-                <strong>Navegador:</strong>
-                {{ s.user_agent }}
-
+                <strong>Duración:</strong> {{ (s.duration_seconds // 60) }} min | <strong>Login:</strong> {{ s.login_at|datetime_format }}
               </div>
             {% endfor %}
-
           </div>
-
         {% else %}
-
-          <div class="simple-item empty">
-            No hay usuarios conectados en este momento
-          </div>
-
+          <div class="simple-item empty">No hay usuarios conectados</div>
         {% endif %}
-
       </article>
-
-      <!-- INFO ADMIN -->
       <article class="form-card">
-
         <p class="eyebrow">Administrador</p>
-        <h2 class="section-title">Información</h2>
-
+        <h2 class="section-title">Tu Perfil</h2>
         <div class="simple-list">
-
-          <div class="simple-item">
-            <strong>Usuario:</strong><br>
-            {{ current_user.username }}
-          </div>
-
-          <div class="simple-item">
-            <strong>ID:</strong><br>
-            {{ current_user.id }}
-          </div>
-
-          <div class="simple-item">
-            <strong>Rol:</strong><br>
-            Admin
-          </div>
-
+          <div class="simple-item"><strong>Usuario:</strong> {{ current_user.username }}</div>
+          <div class="simple-item"><strong>ID:</strong> {{ current_user.id }}</div>
+          <div class="simple-item"><strong>Rol:</strong> Administrador</div>
         </div>
-
       </article>
-
     </div>
-
-    <!-- HISTORIAL DE SESIONES -->
     <div class="section-heading" style="margin-top: 40px;">
       <p class="eyebrow">Histórico</p>
-      <h2>Sesiones registradas</h2>
+      <h2>Sesiones recientes finalizadas</h2>
     </div>
-
-    <div class="form-card">
-
-      {% if dashboard.active_sessions %}
+    <div class="form-card" style="overflow-x: auto;">
+      {% if dashboard.history %}
         <table class="data-table">
           <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>IP</th>
-              <th>Ciudad</th>
-              <th>País</th>
-              <th>Duración</th>
-            </tr>
+            <tr><th>Usuario</th><th>IP</th><th>Ubicación</th><th>Inicio</th><th>Fin</th><th>Duración</th></tr>
           </thead>
           <tbody>
-
-          {% for s in dashboard.active_sessions %}
+          {% for s in dashboard.history %}
             <tr>
-              <td>{{ s.user }}</td>
-              <td>{{ s.ip }}</td>
-              <td>{{ s.city }}</td>
-              <td>{{ s.country }}</td>
+              <td>{{ s.user }}</td><td>{{ s.ip }}</td><td>{{ s.city }}, {{ s.country }}</td>
+              <td>{{ s.login_at|datetime_format }}</td><td>{{ s.logout_at|datetime_format }}</td>
               <td>{{ (s.duration_seconds // 60) }} min</td>
             </tr>
           {% endfor %}
-
           </tbody>
         </table>
       {% else %}
-        <p>No hay registros</p>
+        <p class="simple-item empty">No hay registros recientes.</p>
       {% endif %}
-
     </div>
-
   </div>
 </section>
 {% endblock %}
