@@ -1600,3 +1600,118 @@ textarea {
     font-size: 0.8rem;
   }
 }
+body.login-body {
+    background: linear-gradient(135deg, #1abc9c, #16a085);
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.login-container {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+}
+
+.login-card {
+    padding: 40px;
+    background: #1e1e1e;
+    color: #fff;
+    width: 350px;
+}
+
+.login-card h1 {
+    color: #2ecc71;
+    margin-bottom: 10px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #2c2c2c;
+    color: #fff;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    background: #2ecc71;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    background: #27ae60;
+}
+
+.divider {
+    text-align: center;
+    margin: 20px 0;
+    color: #aaa;
+}
+
+.social-login {
+    display: flex;
+    justify-content: space-around;
+}
+
+.btn-social {
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+}
+
+.google {
+    background: #fff url('https://upload.wikimedia.org/wikipedia/commons/4/4e/Google_Chrome_icon_%282011%29.png') center/60% no-repeat;
+}
+
+.apple {
+    background: #fff url('https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg') center/60% no-repeat;
+}
+
+.register {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.register a {
+    color: #2ecc71;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-side {
+    background: transparent;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 20px;
+}
+
+.buu-img {
+    width: 120px;
+    opacity: 0.9;
+}
