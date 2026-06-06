@@ -547,4 +547,4 @@ with app.app_context():
     assign_admin_by_id()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run
