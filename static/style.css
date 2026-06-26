@@ -763,7 +763,6 @@ textarea {
   }
 }
 
-
 /* ===== PREMIUM LOGIN STYLES WITH PERSONAL PHOTO ===== */
 
 .premium-login-section {
@@ -779,9 +778,10 @@ textarea {
   width: 100%;
   max-width: 1200px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(280px, 440px) minmax(320px, 420px);
   gap: 60px;
   align-items: center;
+  justify-content: center;
 }
 
 /* Left Side: Photo */
@@ -789,18 +789,18 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
 }
 
 .premium-photo-frame {
   width: 100%;
-  max-width: 380px;
-  aspect-ratio: 1;
-  border-radius: 20px;
+  max-width: 420px;
+  aspect-ratio: 4 / 5;
+  border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   animation: premium-photo-enter 0.8s ease-out;
   border: 1px solid rgba(0, 0, 0, 0.05);
+  background: #f3f3f3;
 }
 
 @keyframes premium-photo-enter {
@@ -815,10 +815,12 @@ textarea {
 }
 
 .premium-photo {
- width: 100%;
- height: 100%;
- object-fit: cover; /* La imagen se recorta proporcionalmente para llenar todo el espacio */
- object-position: center; /* Centra el enfoque de la foto */
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 0;
 }
 
 /* Right Side: Form */
@@ -985,23 +987,20 @@ textarea {
 @media (max-width: 1024px) {
   .premium-login-container {
     grid-template-columns: 1fr;
-    gap: 48px;
-  }
-
-  .premium-login-photo {
-    order: 2;
-    min-height: 400px;
+    gap: 40px;
   }
 
   .premium-login-form-container {
     order: 1;
   }
 
+  .premium-login-photo {
+    order: 2;
+  }
+
   .premium-photo-frame {
-    width: 300px; /* Ajusta este tamaño al que necesites */
-    height: 400px; /* Ajusta este tamaño al que necesites */
-    overflow: hidden; /* Oculta cualquier parte de la imagen que sobresalga */
-    border-radius: 15px; /* Opcional: Da un toque de marco redondeado */
+    max-width: 320px;
+    aspect-ratio: 4 / 5;
   }
 }
 
@@ -1025,7 +1024,6 @@ textarea {
 
   .premium-photo-frame {
     max-width: 280px;
-    min-height: 280px;
   }
 
   .premium-login-photo {
@@ -1079,9 +1077,8 @@ textarea {
   }
 
   .premium-photo-frame {
-    max-width: 240px;
-    min-height: 240px;
-    border-radius: 16px;
+    max-width: 220px;
+    border-radius: 18px;
   }
 
   .premium-footer-text {
@@ -1099,12 +1096,9 @@ textarea {
   }
 
   .premium-photo-frame {
-    max-width: 200px;
-    min-height: 200px;
-    border-radius: 12px;
+    max-width: 190px;
   }
 }
-
 
 /* ===== WHATSAPP-STYLE CHAT ===== */
 
@@ -1262,7 +1256,8 @@ textarea {
 }
 
 .message-delete-btn {
-  background: rgba(199, 81, 125, 0.1);
+  background: rgba(37, 211, 102, 0.1);
+  color: #25D366;
   border: none;
   border-radius: 50%;
   width: 24px;
@@ -1270,7 +1265,6 @@ textarea {
   padding: 0;
   cursor: pointer;
   font-size: 1.2rem;
-  color: var(--primary);
   transition: all 220ms ease;
   display: flex;
   align-items: center;
@@ -1283,7 +1277,7 @@ textarea {
 }
 
 .message-delete-btn:hover {
-  background: rgba(199, 81, 125, 0.2);
+  background: rgba(37, 211, 102, 0.2);
   transform: scale(1.1);
 }
 
@@ -1502,7 +1496,6 @@ textarea {
   }
 }
 
-
 /* Date Separator */
 .date-separator {
   display: flex;
@@ -1568,16 +1561,6 @@ textarea {
 
 .load-more-btn:active {
   transform: translateY(0);
-}
-
-/* Update delete button color to match WhatsApp green */
-.message-delete-btn {
-  background: rgba(37, 211, 102, 0.1);
-  color: #25D366;
-}
-
-.message-delete-btn:hover {
-  background: rgba(37, 211, 102, 0.2);
 }
 
 /* Responsive adjustments for date separator */
